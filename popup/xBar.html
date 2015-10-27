@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+<head lang="en">
+    <meta charset="UTF-8">
+    <title>Login</title>
+    <link rel="stylesheet" type="text/css" href="login.css">
+</head>
+<body>
+    <div class="container">
+        <div class="toggle-login"  id="logged-out">
+
+            <form id="login-form">
+                <h1>Login</h1>
+                <p><input type="text" name="email" value="" placeholder="Email"></p>
+                <p><input type="password" name="password" value="" placeholder="Password"></p>
+                <p class="submit"><input type="submit" name="login" value="Login"></p>
+            </form>
+
+            <hr>
+
+            <form id="register-form">
+                <div class="col-50">
+                    <h1>Register</h1>
+                </div>
+                <div class="col-50">
+                    <p><input type="text" name="reg_email" value="" placeholder="Email"></p>
+                    <p><input type="text" name="first_name" value="" placeholder="First Name"></p>
+                    <p><input type="text" name="last_name" value="" placeholder="Last Name"></p>
+                    <p><input type="password" name="reg_password" value="" placeholder="Password"></p>
+                    <p><input type="password" name="reg_password_check" value="" placeholder="Confirm Password"></p>
+                    <p class="submit"><input type="submit" name="register" value="Register"></p>
+                </div>
+            </form>
+        </div>
+        <div class="toggle-login" id="logged-in">
+            <h1>Welcome <span id="user-name"></span></h1>
+            <p><a href="http://gplusnow.com" target="_blank">Go to G+Now</a></p>
+            <p class="submit"><button id="logout">Logout</button></p>
+        </div>
+    </div>
+    <script type="text/javascript" src="../vendor/jquery-2.1.4.min.js"></script>
+    <script type="text/javascript" src="login.js"></script>
+</body>
+</html>

@@ -1,0 +1,127 @@
+body {
+    font-size: 100%;
+}
+
+p {
+    padding: 0;
+    margin: 0;
+}
+
+a {
+    color: inherit;
+    padding: inherit;
+    font: inherit;
+    font-size: inherit;
+}
+
+.x_cursor {
+    cursor: url('chrome-extension://__MSG_@@extension_id__/images/gxbar_icon_16.png') , auto !important;
+}
+
+.pop-up-box {
+    width: 300px;
+    height: 200px;
+    background-color: #f2faf7;
+    border: 2px solid #121d22;
+    position: fixed;
+    z-index: 9999999999;
+    left: 100px;
+    top: 100px;
+    display: none;
+}
+
+.pop-up-box h1 {
+    padding: 80px 0 0 0;
+    text-align: center;
+}
+
+/*ACTIVATED-EXTENSION STYLE*/
+.toggle-titles {
+    display: none;
+}
+
+/*General Circle*/
+
+.circle {
+    width: 300px;
+    height: 300px;
+    border-radius: 50%;
+    background-color: #f2faf7;
+    border: 2px solid #121d22;
+    z-index: 99992147483647;
+    display: none;
+}
+
+/*Saved Elements Style*/
+.saved-element {
+    position: absolute;
+}
+
+.saved-element .content {
+    position: relative;
+    text-align: center;
+    display: none;
+}
+
+.saved-element a {
+    color: black;
+    text-decoration: none;
+}
+
+.saved-element p {
+    font-size: 1.5em;
+    cursor: pointer;
+}
+
+.saved-element p:hover {
+    text-decoration: underline;
+}
+
+.saved-element h1 {
+    padding-top: 50px;
+}
+
+.success h1 {
+    padding-top: 65px;
+}
+
+.success p {
+    padding-top: 15px;
+}
+
+.fail {
+    display: none;
+    color: white;
+}
+
+.fail h1 {
+    padding-top: 50px;
+}
+
+.fail p {
+    padding-top: 8px;
+}
+
+/*DROPZONE STYLE*/
+
+#dropzone {
+    position: fixed;
+}
+
+#dropzone h1 {
+    text-align: center;
+    padding: 130px 0;
+    font-size: 2em;
+}
+
+#dropzone * {
+    pointer-events: none;
+}
+
+/*SUCCESS-BOX*/
+
+#success-box p {
+    padding-top: 15px;
+    text-align: center;
+    font-size: 1.5em;
+}

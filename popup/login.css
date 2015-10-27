@@ -1,0 +1,45 @@
+body {
+    background-color: #f2faf7;
+    border: 2px solid #121d22;
+}
+
+.container {
+    min-width: 200px;
+    min-height: 100px;
+    padding-left: 10px;
+    padding-bottom: 20px;
+    overflow: hidden;
+}
+
+a {
+    color: black;
+    font-size: 18px;
+}
+
+.toggle-login {
+    display: none;
+}
+
+form {
+    padding: 5px;
+}
+
+#login-form {
+    width: 400px;
+    overflow: hidden;
+}
+
+#login-form p {
+    display: inline-block;
+    float: left;
+    padding-right: 10px;
+}
+
+#register-form {
+}
+
+.col-50 {
+    width: 50%;
+    display: inline-block;
+    float: left;
+}
