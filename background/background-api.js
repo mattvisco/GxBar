@@ -11,7 +11,6 @@ var post = function(url, data, id) {
             // Check the status
             if (client.status == 200) {
                 // Resolve the promise with the response text
-                console.log('POST RESPONSE: ' + client.response);
                 resolve(client.response);
             } else {
                 // Reject if status isn't 200
@@ -58,7 +57,7 @@ var checkToken = function(data) {
 // TODO: be sure this is the right id
 var storePost = function(data, tabId) {
     var url = config.DOMAIN + "/api/post/";
-    var id = data.id;
+    var id = data.url;
     data = makeDataPackage(data, 'post');
     if (!data.errors) {
         post(url, data, id).then(JSON.parse).then(
@@ -69,10 +68,8 @@ var storePost = function(data, tabId) {
                 } else if (response.message == messages.SUCCESS) sendSuccessMessage('Post', response.post_id, tabId, id);
             },
             function(reject){
-                if(reject.errors) {
-                    errorHandler(reject, errors.APPENDTRY);
-                    sendErrorMessage(tabId, id); //TODO: send with id
-                }
+                errorHandler(reject, errors.APPENDTRY);
+                sendErrorMessage(tabId, id);
             }
         );
     }

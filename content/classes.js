@@ -61,8 +61,6 @@ var ContactInfo = function(options) {
 };
 
 var Post = function(options) {
-    // Unique id associated with a post
-    this.id = options['id'];
     // Relation to the User class
     this.user = options['user'];
     // Relation to javascript Date Obj (can be interepreted as String)

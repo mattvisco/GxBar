@@ -13,9 +13,10 @@ var errorHandler = function(response, appendMessage) {
         if(currErrors.email) alert(currErrors.email);
         else if(currErrors.password) alert(currErrors.password);
         else if(currErrors.error) alert(currErrors.error);
-        else if(appendMessage) alert(currErrors+appendMessage);
+        else if(currErrors.errorsCons) console.log(currErrors.errorsCons);
+        else if(appendMessage) console.log(currErrors+appendMessage);
         else if (typeof currErrors === 'string') alert(currErrors);
-        else alert(errors.GENERALERROR);
+        else console.log(errors.GENERALERROR);
     } else console.log('No errors in response');
     return response;
 };
@@ -25,16 +26,16 @@ var errors = {
     APPENDTRY: '. Please Try Again.',
     GENERALERROR: 'Something Happened. Please Try Again.',
 
-    SAVEFAILED: {errors: 'Cannot Save Element. Please Try Again.'},
+    SAVEFAILED: {errorsCons: 'Cannot Save Element. Please Try Again.'},
     ILLEGALPOST: {errors: 'Cannot Save Post. Please Log in First.'},
-    NETWORKERR: {errors: 'Network Connection Failed'},
-    BADTOKENCHECK: {errors: 'Oops, Something Happened. Please Log Back in.'},
-    NETWORKPARSEERR: {errors: 'Oops, Parser Did Not Work Due to a Network Connection Fail.'},
+    NETWORKERR: {errorsCons: 'Network Connection Failed'},
+    BADTOKENCHECK: {errorsCons: 'Bad token'},
+    NETWORKPARSEERR: {errorsCons: 'Oops, Parser Did Not Work Due to a Network Connection Fail.'},
     statusError: function(status) {
-        return {errors: 'Oops, a ' + status + ' Error Occurred'};
+        return {errorsCons: 'Oops, a ' + status + ' Error Occurred'};
     },
     parseStatusError: function(status) {
-        return {errors: 'Oops, the Parser Did Not Work Due to a ' +
+        return {errorsCons: 'Oops, the Parser Did Not Work Due to a ' +
         + status + ' Error'};
     }
 };

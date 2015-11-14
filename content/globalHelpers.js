@@ -44,6 +44,7 @@ var monthNames = ["January", "February", "March", "April", "May", "June", "July"
 var monthNamesShort = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
 var getType = function(target, targetClass) {
+    target = $(target);
     targetClass = targetClass.replace(' x_cursor', '');
     var type = classToType[targetClass];
     if (type == POSTTYPE) {
@@ -56,7 +57,56 @@ var getType = function(target, targetClass) {
     return type;
 };
 
-var getElementId = function(element, type) {
-    if(type == POSTTYPE) return $(element).parent().attr('id');
-    else return 'tmpID';
+var getElementId = function(element, type, targetClass) {
+    element = $(element);
+    targetClass = targetClass.replace(' x_cursor', '');
+    var id;
+    switch (type) {
+        case POSTTYPE:
+            if (targetClass == REPOST) id = element.find(REPOSTURLDOT).prop('href');
+            else id = element.find(POSTURLDOT).prop('href');
+            break;
+        case USERTYPE:
+            if ( findLinkOfUser.indexOf(targetClass) > -1 ) {
+                element = getUserTarget(element, targetClass, userParent[targetClass]);
+            }
+            if ( targetClass == USERIMAGEPAGE ) {
+                id = window.location.href;
+                if ( id.indexOf('/about') == -1 ) id = id.substring(0,id.lastIndexOf('/')) + '/about';
+            } else id = element.prop('href') + '/about';
+            break;
+        case COMMUNITYTYPE:
+            if ( targetClass == COMMUNITYPOST || targetClass == COMMUNITYLINKPOST ) {
+                if (targetClass == COMMUNITYPOST) element = element.find(COMMUNITYLINKPOSTDOT);
+                id = element.prop('href');
+            } else {
+                if ( communityLinks.indexOf(targetClass) > -1 ) id = element.prop('href');
+                else {
+                    var parentName = communityParentNames[targetClass];
+                    if (parentName) element = element.parents(parentName);
+                    var communityOptionsClass = communityFieldToClass[targetClass];
+                    if (communityOptionsClass) {
+                        if ( targetClass == COMMUNITY ) id = element.parent().prop('href');
+                        else id = element.find(communityOptionsClass.url).prop('href');
+                    }
+                }
+            }
+            break;
+        case EMBEDTYPE:
+            id = getEmbedUrlTitle(element)[0][1];
+            break;
+        case EVENTTYPE:
+        case HANGOUTTYPE:
+            var inEvent = ( targetClass == EVENT );
+            if (inEvent) id = window.location.href;
+            else {
+                var eventLink = element.find(EVENTLINKDOT);
+                if (!eventLink.length) eventLink = element.find(POSTEVENTLINKDOT);
+                id = eventLink.prop('href');
+            }
+            break;
+        default:
+            id = 'no-id-found';
+    }
+    return id;
 };

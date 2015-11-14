@@ -7,7 +7,6 @@ var dropZone;
 var savedElementMaster;
 var dragType;
 var activatedPopUp;
-var successBox;
 var currHighlighted;
 var currDragState;
 var currDragFunction;
@@ -15,10 +14,9 @@ var currUrlLocation;
 var highlightState = true;
 var beenSetup = false;
 var userActive = false;
+var storedElements = [];
 
 // Dropzone Constants
-var DROPZONE = '#f2faf7';
-var DROPZONEENTER = '#424f55';
 var SPACING = 75;
 var DRAGIMAGESIZE = 150;
 
@@ -74,7 +72,7 @@ var showHideTitle = function(showTitle, hide1, hide2, hide3) {
 };
 
 var pauseDrag = function(drag, updateElement) {
-    setDraggables(drag,false,drag, false, updateElement);
+    setDraggables(drag,false,drag, false, updateElement, true);
 };
 
 var enableDrag = function(drag, updateElement) {
@@ -92,7 +90,7 @@ var enableDrag = function(drag, updateElement) {
     }
 };
 
-var setDraggables = function(drag, nondrag, select, onlyHighlight, updateElement) {
+var setDraggables = function(drag, nondrag, select, onlyHighlight, updateElement, pause) {
     for (var dragIndex in draggable) {
         if (checkEventPageDraggable(draggable[dragIndex])) {
             // If mutation passes in updateElement than find update any draggables withing element
@@ -104,6 +102,7 @@ var setDraggables = function(drag, nondrag, select, onlyHighlight, updateElement
             }
             else dragElement = $(draggable[dragIndex]);
             dragElement.each(function () {
+                checkAndAddDot(this);
                 var type = getType($(this), $(this).attr('class'));
                 if (type && !$(this).get(0).dragOff) {
                     if(!onlyHighlight) {
@@ -145,37 +144,69 @@ var setDraggables = function(drag, nondrag, select, onlyHighlight, updateElement
             dragElement.each(function () {
                 $(this).attr("draggable", nondrag);
                 if($.inArray( $(this).attr('class'), nonXers) == -1 ) {
-                    if (drag) $(this).addClass('x_cursor');
-                    else $(this).removeClass('x_cursor');
+                    if(!pause) {
+                        if (drag) $(this).addClass('x_cursor');
+                        else $(this).removeClass('x_cursor');
+                    }
                 }
             });
         }
     }
 };
 
-// TODO: store saved elements in chrome storage -- open page with bubbles
-var turnOffDrag = function(dragElement) {
-    $(dragElement)
-        .attr("draggable", false)
-        .off('mouseenter', highlightDragElement)
-        .off('mouseleave', unHighlightDragElement)
-        .off('mouseover', checkHighlightDragElement)
-        .removeClass('x_cursor')
-        .enableSelection();
-    dragElement.dragOff = true;
-    savedElements.push(dragElement);
+var enableExtension = function(state) {
+    if (state && !beenSetup) setup();
+    else{
+        if(currHighlighted) currHighlighted.css({outlineStyle: 'none'});
+        currDragFunction = enableDrag;
+        currDragState = state;
+        enableDrag(currDragState);
+        showActiveHtml(currDragState, true);
+    }
 };
 
-var turnOnDrag = function(dragElement) {
-    $(dragElement)
-        .attr("draggable", true)
-        .on('mouseenter', highlightDragElement)
-        .on('mouseleave', unHighlightDragElement)
-        .on('mouseover', checkHighlightDragElement)
-        .addClass('x_cursor')
-        .enableSelection();
-    dragElement.dragOff = false;
+var enableHighlight = function(state) {
+    highlightState = state;
+    setDraggables(true, false, true, true);
+    if(currHighlighted) currHighlighted.css({outlineStyle: 'none'});
+    showActiveHtml(highlightState, false);
 };
+
+var checkEmbeded = function(obj, objClass) {
+    var type = getType($(obj),objClass);
+    if (type != EMBEDTYPE) return true;
+    else {
+        var id = getElementId(obj, type, objClass);
+        var holder = findHolder(obj);
+        var noExist = true;
+        var showingDots = $(holder).find('.saved-element');
+        if (showingDots.length) {
+            showingDots.each(function(){
+                if (this.refId == id) {
+                    noExist = false;
+                    turnOffDrag(obj);
+                }
+            });
+        }
+        return noExist;
+    }
+};
+
+var checkAndAddDot = function(obj) {
+    if (!obj.dragOff) {
+        var objClass = $(obj).attr('class');
+        if(checkEmbeded(obj, objClass)) {
+            var type = getType($(obj), objClass);
+            var id = getElementId(obj, type, objClass);
+            var match;
+            for (var i = 0; i < storedElements.length; i++) {
+                if (storedElements[i].id == id) match = storedElements[i];
+            }
+            if (match) addDotToEl(obj, type, id, match.url);
+        }
+    }
+};
+
 
 // ************************************ //
 // ************** Setup *************** //
@@ -208,30 +239,27 @@ var setup = function() {
         dragType = dropZone.find('#drag-element');
     });
 
-    // Append the saved-element master copy to page
-    $.get(chrome.extension.getURL('/views/saved-element.html'), function(data) {
-        savedElementMaster = $(data).appendTo('body');
-    });
-
     // Append the activation-popup to page
     $.get(chrome.extension.getURL('/views/activated-extension.html'), function(data) {
         activatedPopUp = $(data).appendTo('body');
+        $('#gnow-logo-grey').attr('src', chrome.extension.getURL("/images/gx_logo-transparent.png"));
         showActiveHtml(true, true);
     });
 
-    // Append the success-box to page
-    $.get(chrome.extension.getURL('/views/success-box.html'), function(data) {
-        successBox = $(data).appendTo('body');
+    // Append the saved-element master copy to page
+    $.get(chrome.extension.getURL('/views/saved-element.html'), function(data) {
+        savedElementMaster = $(data).appendTo('body');
+        $('#gnow-logo').attr('src', chrome.extension.getURL("/images/gnow_logo.png"));
+
+        currDragFunction = enableDrag;
+        currDragState = true;
+        enableDrag(currDragState);
+
+        // Turn on draggable observer
+        observer.observe(observerTarget, observerConfig);
+
+        beenSetup = true;
     });
-
-    currDragFunction = enableDrag;
-    currDragState = true;
-    enableDrag(currDragState);
-
-    // Turn on draggable observer
-    observer.observe(observerTarget, observerConfig);
-
-    beenSetup = true;
 };
 
 chrome.runtime.sendMessage({message: 'showPage'});
@@ -248,44 +276,34 @@ userActivePort.onMessage.addListener(function(response) {
         if(response.value) userActivePort.postMessage({message: "checkHighlightContext"});
     } else if (response.message == keys.HIGHLIGHT) {
         highlightState = response.value;
+        userActivePort.postMessage({message: "checkStored"});
+        //setup();
+    } else if (response.message == 'storedArray') {
+        storedElements = response.storedArr;
         setup();
     }
 });
 
-var enableExtension = function(state) {
-    if (state && !beenSetup) setup();
-    else{
-        if(currHighlighted) currHighlighted.css({outlineStyle: 'none'});
-        currDragFunction = enableDrag;
-        currDragState = state;
-        enableDrag(currDragState);
-        showActiveHtml(currDragState, true);
-    }
-};
-
-var enableHighlight = function(state) {
-    highlightState = state;
-    setDraggables(true, false, true, true);
-    if(currHighlighted) currHighlighted.css({outlineStyle: 'none'});
-    showActiveHtml(highlightState, false);
-};
-
 chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
     if (request.message == 'init') {
         if (request.userActive) {
+            storedElements = request.storedArr;
             highlightState = true;
-            if (!beenSetup) setup();
+            if (!beenSetup) {
+                setup();
+            }
             else {
                 enableExtension(true);
             }
         } else if(beenSetup) {
+            storedElements = [];
             enableExtension(false);
         }
     }
     else if (request.message == keys.XBAR) enableExtension(request.value);
     else if (request.message == keys.HIGHLIGHT) enableHighlight(request.value);
     else if (request.message == 'success') elementSaved(request.id, request.url);
-    else if (request.message == 'post-fail') elementSaveFailed(request.id); //TODO: receive id
+    else if (request.message == 'post-fail') elementSaveFailed(request.id);
     else if (request.message == 'flush-dots') flushDots();
 });
 

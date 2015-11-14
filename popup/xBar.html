@@ -9,8 +9,8 @@
     <div class="container">
         <div class="toggle-login"  id="logged-out">
 
-            <form id="login-form">
-                <h1>Login</h1>
+            <form class="pad" id="login-form">
+                <div class="float-container"><h1 class="float left">Login</h1> <span class="float right"><img src="../images/gbar_logo.png"/></span></div>
                 <p><input type="text" name="email" value="" placeholder="Email"></p>
                 <p><input type="password" name="password" value="" placeholder="Password"></p>
                 <p class="submit"><input type="submit" name="login" value="Login"></p>
@@ -18,24 +18,39 @@
 
             <hr>
 
-            <form id="register-form">
-                <div class="col-50">
-                    <h1>Register</h1>
-                </div>
-                <div class="col-50">
-                    <p><input type="text" name="reg_email" value="" placeholder="Email"></p>
-                    <p><input type="text" name="first_name" value="" placeholder="First Name"></p>
-                    <p><input type="text" name="last_name" value="" placeholder="Last Name"></p>
-                    <p><input type="password" name="reg_password" value="" placeholder="Password"></p>
-                    <p><input type="password" name="reg_password_check" value="" placeholder="Confirm Password"></p>
-                    <p class="submit"><input type="submit" name="register" value="Register"></p>
-                </div>
+            <form class="pad" id="register-form">
+                <h1>Register</h1>
+                <p><input type="text" name="reg_email" value="" placeholder="Email"></p>
+                <p><input type="text" name="first_name" value="" placeholder="First Name"></p>
+                <p><input type="text" name="last_name" value="" placeholder="Last Name"></p>
+                <p><input type="password" name="reg_password" value="" placeholder="Password"></p>
+                <p><input type="password" name="reg_password_check" value="" placeholder="Confirm Password"></p>
+                <p class="submit"><input type="submit" name="register" value="Register"></p>
             </form>
+
+            <hr>
+
+            <div class="glink-contain pad center">
+                <a href="http://gplusnow.com/" target="_blank">
+                    <span class="gnow float left">Visit   </span>
+                    <span class="gnow float left"><img src="../images/gnow_logo-grey.png"/></span>
+                </a>
+            </div>
         </div>
         <div class="toggle-login" id="logged-in">
-            <h1>Welcome <span id="user-name"></span></h1>
-            <p><a href="http://gplusnow.com" target="_blank">Go to G+Now</a></p>
-            <p class="submit"><button id="logout">Logout</button></p>
+            <div class="pad">
+                <img src="../images/gbar_logo.png"/>
+                <h1>Welcome, <span id="user-name"></span>!</h1>
+                <button id="logout">Logout</button>
+            </div>
+            <hr>
+
+            <div class="glink-contain pad">
+                <a href="http://gplusnow.com/personal" target="_blank">
+                    <span class="gnow float left">Open your profile on   </span>
+                    <span class="gnow float left"><img src="../images/gnow_logo-grey.png"/></span>
+                </a>
+            </div>
         </div>
     </div>
     <script type="text/javascript" src="../vendor/jquery-2.1.4.min.js"></script>

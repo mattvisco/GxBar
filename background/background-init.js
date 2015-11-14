@@ -46,7 +46,7 @@ var enableHighlight = chrome.contextMenus.create({
 });
 
 var disableXbar = chrome.contextMenus.create({
-    "title": "Disable GxBar",
+    "title": "Disable GX Extension",
     "documentUrlPatterns": showForPages,
     'onclick': function() {
         contextMenuSetState(keys.XBAR, values.CONTEXTOFF,disableXbar,enableXbar);
@@ -54,7 +54,7 @@ var disableXbar = chrome.contextMenus.create({
 });
 
 var enableXbar = chrome.contextMenus.create({
-    "title": "Enable GxBar",
+    "title": "Enable GX Extension",
     "documentUrlPatterns": showForPages,
     'onclick': function() {
         contextMenuSetState(keys.XBAR, values.CONTEXTON,disableXbar,enableXbar);
@@ -203,6 +203,9 @@ var initialize = function(userInfo) {
         contextMenuFindState(keys.HIGHLIGHT, disableHighlight, enableHighlight);
         // Check value of xBar toggling variable
         contextMenuFindState(keys.XBAR, disableXbar, enableXbar);
+
+        storage.get(keys.STORED+config.email,function(value){sendInit(value)});
+
     } else {
         config.userActive = false;
         config.email = null;
@@ -212,23 +215,45 @@ var initialize = function(userInfo) {
 
         // Disable context menu
         disableContextMenu();
+        chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
+            if(tabs[0].id) chrome.tabs.sendMessage(tabs[0].id, {message: 'init', userActive: config.userActive});
+        });
     }
     var dataToSend = {
         message: 'init',
-        userActive: config.userActive
+        userActive: config.userActive,
+        firstName: config.firstName
     };
-    chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
-        if(tabs[0].id) chrome.tabs.sendMessage(tabs[0].id, dataToSend);
-    });
-    dataToSend.firstName = config.firstName;
     chrome.extension.sendMessage(dataToSend);
 };
 
+var sendInit = function(storedArr) {
+    if (!storedArr) {
+        storedArr = [];
+        storage.set(keys.STORED+config.email, storedArr);
+    }
+    var dataToSend = {
+        message: 'init',
+        userActive: config.userActive,
+        storedArr: storedArr
+    }; // TODO: add stored Array to dataToSend
+    chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
+        if(tabs[0].id) chrome.tabs.sendMessage(tabs[0].id, dataToSend);
+    });
+};
 var logout = function() {
     storage.remove(keys.USERACTIVE);
     storage.remove(keys.HIGHLIGHT);
     storage.remove(keys.XBAR);
     // Think about how to remove saveEl[]
+};
+
+var storeSavedElement = function(stored) {
+    storage.get(keys.STORED+config.email,function(value){
+        if (!value) value = [];
+        value.push(stored);
+        storage.set(keys.STORED+config.email, value);
+    });
 };
 
 chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
@@ -245,6 +270,7 @@ chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
     }
     else if ( request.message == 'storePost' ) storePost(request.data, sender.tab.id);
     else if ( request.message == 'checkActive' ) sendResponse({userActive: config.userActive, firstName: config.firstName});
+    else if ( request.message == 'storedElement' ) storeSavedElement(request.stored);
 });
 
 // Connect with content script, communicate settings between
@@ -269,6 +295,9 @@ chrome.runtime.onConnect.addListener(function(port) {
         }
         else if (request.message == "checkXBarContext") contextMenuFindState(keys.XBAR, disableXbar, enableXbar, port);
         else if (request.message == "checkHighlightContext") contextMenuFindState(keys.HIGHLIGHT, disableHighlight, enableHighlight, port);
+        else if (request.message == "checkStored") storage.get(keys.STORED+config.email,function(value){
+            port.postMessage({message: 'storedArray', storedArr: value});
+        });
     });
 });
 

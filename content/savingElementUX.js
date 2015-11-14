@@ -3,79 +3,234 @@
  */
 
 // Constants
-var SAVEDSIZE = 20;
-var SAVEDHOVERSIZE = 200;
-var SAVEDPADDING = 15;
-var LITTLEZ = 1;
+var SAVEDSIZE = 14;
+var SAVEDHOVERSIZE = 292;
+var SAVEDCOLOR = '#76cb69';
+var FAILEDCOLOR = '#242424';
+var INNERFAILEDCOLOR = '#202020';
+var LITTLEZ = 2;
 var BIGZ = 999999999999999;
-var WAITTILLERROR = 8000;//30000;
-var COLORINTERVAL = 800;
+var COMINGSOONDELAY = 5000;
+var COLORINTERVAL = 200;
 var ANIMATEDOWNSPEED = 500;
 var HOVERANIMATE = 300;
 
 
-var currWait = [];
-var savedElements = [];
+var waitingDots = [];
+var parsedElements = [];
+var failedDots = [];
+var saveFailed = false;
+var comingSoon = [COMMUNITYTYPE, HANGOUTTYPE, EVENTTYPE, EMBEDTYPE, USERTYPE];
 
-// check dictionary for the correct holder parent
-// TODO: build out for all draggable elements
-var findHolderParent = function(dragElement) {
+var removeFromArray = function(array, value) {
+    var index = array.indexOf(value);
+    if (index > -1) {
+        array.splice(index, 1);
+    }
+};
+
+var getElementById = function(array, key) {
+    var value = false;
+    array.forEach(function(el){
+        if(el.refId == key) value = el;
+    });
+    return value;
+};
+
+var getAndRemoveById = function(array, key) {
+    var value = getElementById(array,key);
+    if(value) removeFromArray(array,value);
+    return value;
+};
+
+var toggleXCursor = function(el, add) {
+    nonDraggable.forEach(function(nonDrag){
+        $(el).find(nonDrag).each(function(){
+            if(add) $(this).addClass('x_cursor');
+            else $(this).removeClass('x_cursor');
+        });
+    });
+};
+
+var turnOffDrag = function(dragElement) {
+    $(dragElement)
+        .attr("draggable", false)
+        .off('mouseenter', highlightDragElement)
+        .off('mouseleave', unHighlightDragElement)
+        .off('mouseover', checkHighlightDragElement)
+        .removeClass('x_cursor')
+        .enableSelection();
+    toggleXCursor(dragElement, false);
+    dragElement.dragOff = true;
+    parsedElements.push(dragElement);
+};
+
+var turnOnDrag = function(dragElement) {
+    $(dragElement)
+        .attr("draggable", true)
+        .on('mouseenter', highlightDragElement)
+        .on('mouseleave', unHighlightDragElement)
+        .on('mouseover', checkHighlightDragElement)
+        .addClass('x_cursor')
+        .enableSelection();
+    toggleXCursor(dragElement, true);
+    dragElement.dragOff = false;
+};
+
+var findHolder = function(dragElement) {
+    var className = $(dragElement).attr('class').replace(' x_cursor', '');
+    if (className == USERIMAGEPAGE) return $(dragElement).parents(USERPAGEPARENTPINDOT).get(0);
+    if (className == COMMUNITYJOINED) return $(dragElement).parents(COMMUNITYJOINPARENTDOT).get(0);
+    if (className == USERIMAGESINGLEPOST) {
+        if ( window.location.pathname.indexOf("/events/") != -1 ) return $(dragElement).parents(USERSINGLEEVENTPARENTFORSAVEDOT).get(0);
+        else return $(dragElement).parents(USERSINGLEPOSTPARENTFORSAVEDOT).get(0);
+    }
     var parents = $(dragElement).parents(POSTDOT);
     if(parents.length) return parents.get(0);
     else return dragElement;
 };
 
-var storedElement = function(dragElement,type) {
-    // TODO: user card will need to turn off both on post img and card -- store id as post img
-    var id = getElementId(dragElement,type);
+var getShift = function(dragElement) {
+    var shift = {left: 0, top: 0};
+    var className = $(dragElement).attr('class').replace('x_cursor', '');
+    if (className == COMMUNITYPOST) shift.left = $(dragElement).width();
+    else if (className == USERIMAGESINGLEPOST) {
+        shift.left = 15;
+        shift.top = 15;
+    } else if (className == USERIMAGEPOST) {
+        shift.left = 5;
+        shift.top = 5;
+    } else if (className == USERIMAGEPAGE) {
+        // Hacky positioning...
+        shift.left = $(dragElement).parents('.k5.U9b.kXa').get(0).offsetLeft;
+        shift.top = $(dragElement).parents('.k5.U9b.kXa').get(0).offsetTop + 100;
+    }
+    return shift;
+};
+
+var setDotPosition = function(dragElement) {
+    var className = $(dragElement).attr('class');
+    var type = getType(dragElement, className);
+    if (type == COMMUNITYTYPE || type == EMBEDTYPE) {
+        var id = getElementId(dragElement, type, className);
+        var dotHolder = findHolder(dragElement);
+        var stored = dotHolder.stored;
+        if (stored) {
+            var dragsDot;
+            stored.forEach(function(dot) {
+                if(dot.refId == id) dragsDot = dot;
+            });
+            if (dragsDot) {
+                var shift = getShift(dragElement);
+                var initTop = dragElement.offsetTop - SAVEDSIZE/2 + shift.top;
+                var initLeft = dragElement.offsetLeft - SAVEDSIZE/2 + shift.left;
+                $(dragsDot).css({top: initTop, left: initLeft});
+            }
+        }
+    }
+};
+
+var addDotToEl = function(dragElement, type, id, url) {
     dragElement.refId = id;
     turnOffDrag(dragElement);
-    dragElement = findHolderParent(dragElement);
+    var dotHolder = findHolder(dragElement);
+    var currSavedDot = savedElementMaster.clone();
+
+    var holderPos = $(dotHolder).offset();
+    var dragElPos = $(dragElement).offset();
+    var shift = getShift(dragElement);
+    var initTop = dragElement.offsetTop - SAVEDSIZE/2 + shift.top;
+    if (type == USERTYPE) initTop = dragElPos.top - holderPos.top - SAVEDSIZE/2 + shift.top;
+    var initLeft = dragElement.offsetLeft - SAVEDSIZE/2 + shift.left;
+
+    $(dotHolder).append(currSavedDot);
+    if (!dotHolder.stored) dotHolder.stored = [];
+    dotHolder.stored.push(currSavedDot.get(0));
+
+    currSavedDot.find('.type').text(findTitle(type));
+
+    currSavedDot.css({
+        display: 'block',
+        height: SAVEDSIZE,
+        width: SAVEDSIZE,
+        top: initTop,
+        left: initLeft,
+        zIndex: LITTLEZ,
+        background: SAVEDCOLOR,
+        cursor: 'default'
+    });
+    currSavedDot = currSavedDot.get(0);
+    currSavedDot.isAnimatingSave = false;
+    currSavedDot.refId = id;
+    currSavedDot.inEvent = ( $(dragElement).attr('class').replace(' x_cursor', '') == EVENT );
+
+    $(currSavedDot).find('a').attr('href', url);
+    if($.inArray(type, comingSoon) != -1 ) {
+        $(currSavedDot).find('.inner-circle').addClass('half-circle');
+        $(currSavedDot).find('.viewable .small').text('Not Yet Viewable');
+    }
+
+    activateListeners.call($(currSavedDot));
+};
+
+var storedElement = function(dragElement,type) {
+    var id = getElementId(dragElement, type, $(dragElement).attr('class'));
+    dragElement.refId = id;
+    turnOffDrag(dragElement);
+    var dotHolder = findHolder(dragElement);
 
     var currSavedDot = savedElementMaster.clone();
 
     var currPos = dropZone.position();
-    var currColor = dropZone.css('backgroundColor');
-    var targetPos = $(dragElement).offset();
+    var currColor = dropZone.css('background');
+    var holderPos = $(dotHolder).offset();
+    var dragElPos = $(dragElement).offset();
     var scrollAmt = $('body').scrollTop();
+    var shift = getShift(dragElement);
+    var initTop = dragElement.offsetTop - SAVEDSIZE/2 + shift.top;
+    if (type == USERTYPE) initTop = dragElPos.top - holderPos.top - SAVEDSIZE/2 + shift.top;
+    var initLeft = dragElement.offsetLeft - SAVEDSIZE/2 + shift.left;
 
-    $(dragElement).append(currSavedDot);
+    $(dotHolder).append(currSavedDot);
 
-    var lastStoreBottom = 0;
-    if (dragElement.stored && dragElement.stored.length) {
-        var topMax = 0;
-        for(var i = 0; i < dragElement.stored.length; i++){
-            var currTop = $(dragElement.stored[i]).position().top;
-            if(currTop > topMax) topMax = currTop ;
-        }
-        lastStoreBottom = topMax + SAVEDSIZE + SAVEDPADDING;
-    } else dragElement.stored = [];
-    dragElement.stored.push(currSavedDot.get(0));
+    if (!dotHolder.stored) dotHolder.stored = [];
+    dotHolder.stored.push(currSavedDot.get(0));
 
-
-    currSavedDot.find('.type').text(type);
+    currSavedDot.find('.type').text(findTitle(type));
     currSavedDot.css({
         display: 'block',
         cursor: 'wait',
-        backgroundColor: currColor,
-        top: currPos.top - targetPos.top + scrollAmt ,
-        left: currPos.left - targetPos.left
+        background: currColor,
+        top: currPos.top - holderPos.top + dotHolder.offsetTop + scrollAmt ,
+        left: currPos.left - holderPos.left + dotHolder.offsetLeft
     });
-    currSavedDot.animate({height: SAVEDSIZE, width: SAVEDSIZE,top: lastStoreBottom, left: -10}, ANIMATEDOWNSPEED, function(){
-        currSavedDot.index = 0;
-        currSavedDot.interval = setInterval(function(){savingInProgress(currSavedDot)}, COLORINTERVAL);
-        currSavedDot.timeout = setTimeout(function(){elementSaveFailed(id);}, WAITTILLERROR);
-        $(this).css({zIndex: 1});
-        var minScroll = targetPos.top - $('.Uc').height() + lastStoreBottom; // Uc is the banner height
-        if($('body').scrollTop() > minScroll) $('body').animate({scrollTop: minScroll});
-    });
-
 
     currSavedDot = currSavedDot.get(0);
     currSavedDot.isAnimatingSave = false;
-    currSavedDot.color = currColor;
     currSavedDot.refId = id;
-    currWait.push(currSavedDot);
+    currSavedDot.inEvent = ( $(dragElement).attr('class').replace(' x_cursor', '') == EVENT );
+    waitingDots.push(currSavedDot);
+
+    $(currSavedDot).animate({height: SAVEDSIZE, width: SAVEDSIZE,top: initTop, left: initLeft}, ANIMATEDOWNSPEED, function(){
+        currSavedDot.index = 0;
+        savingInProgress(currSavedDot);
+        currSavedDot.interval = setInterval(function(){savingInProgress(currSavedDot)}, COLORINTERVAL);
+        $(this).css({zIndex: LITTLEZ});
+        var minScroll = holderPos.top - $('.Uc').height() + initTop; // Uc is the banner height
+        if($('body').scrollTop() > minScroll) $('body').animate({scrollTop: minScroll});
+        if (saveFailed) {
+            saveFailed = false;
+            elementSaveFailed(id);
+        }
+        if($.inArray(type, comingSoon) != -1 ) { // TODO: store {refId}
+            setTimeout(function() {
+                var dotData = {id: id};
+                storedElements.push(dotData);
+                chrome.runtime.sendMessage({message: 'storedElement', stored: dotData});
+                initDotComplete(currSavedDot, true, true);
+            }, COMINGSOONDELAY); // Delay for style
+        }
+    });
 };
 
 var savingInProgress = function(dot) {
@@ -84,7 +239,7 @@ var savingInProgress = function(dot) {
         dot.index++;
         type = types[dot.index];
     }
-    $(dot).css({backgroundColor: typeToColor[type]});
+    $(dot).css({background: typeToColor[type]});
     dot.index++;
     if(dot.index >= types.length) dot.index = 0;
 };
@@ -93,12 +248,15 @@ var enterSavedDot = function() {
     if (!this.isAnimatingSave) {
         this.isAnimatingSave = true;
         var currPos = $(this).position();
+        var posFactor;
+        if ( this.inEvent ) posFactor = 10;
+        else posFactor = 2;
         $(this).css({zIndex: BIGZ});
         $(this).animate({
             width: SAVEDHOVERSIZE,
             height: SAVEDHOVERSIZE,
-            top: currPos.top - SAVEDHOVERSIZE/2,
-            left: currPos.left - SAVEDHOVERSIZE/2
+            top: currPos.top - SAVEDHOVERSIZE/posFactor,
+            left: currPos.left - SAVEDHOVERSIZE/posFactor
         }, HOVERANIMATE, function() {
             $(this).find('.content').show();
             completeAnimation(this, enterSavedDot);
@@ -112,11 +270,14 @@ var leaveSavedDot = function() {
         this.isAnimatingSave = true;
         var currPos = $(this).position();
         $(this).find('.content').hide();
+        var posFactor;
+        if ( this.inEvent ) posFactor = 10;
+        else posFactor = 2;
         $(this).animate({
             width: SAVEDSIZE,
             height: SAVEDSIZE,
-            top: currPos.top + SAVEDHOVERSIZE/2,
-            left: currPos.left + SAVEDHOVERSIZE/2,
+            top: currPos.top + SAVEDHOVERSIZE/posFactor,
+            left: currPos.left + SAVEDHOVERSIZE/posFactor,
             zIndex: LITTLEZ
         }, HOVERANIMATE,function(){
             completeAnimation(this, leaveSavedDot);
@@ -140,10 +301,16 @@ var activateListeners = function() {
     this.listenersActivated = true;
 };
 
-var initDotComplete = function(dot, color) {
-    clearTimeout(dot.timeout);
+var initDotComplete = function(dot, complete, coming) {
     clearInterval(dot.interval);
-    $(dot).css({backgroundColor: color, cursor: 'default'});
+    $(dot).css({background: SAVEDCOLOR, cursor: 'default'});
+    if(!complete) {
+        $(dot).css({background: FAILEDCOLOR});
+        $(dot).find('.inner-circle').css({background: INNERFAILEDCOLOR});
+    } else if (coming) {
+        $(dot).find('.inner-circle').addClass('half-circle');
+        $(dot).find('.viewable .small').text('Not Yet Viewable');
+    }
     enterSavedDot.call(dot);
     $(dot).on('mouseenter',activateListeners);
     setTimeout(function(){
@@ -152,29 +319,35 @@ var initDotComplete = function(dot, color) {
             activateListeners.call(dot);
         }
     }, 2000);
+    enableDrag(true);
 };
 
-// TODO: add catch statement?
 var elementSaved = function(id,url) {
-    var savedElDot = getAndRemoveById(currWait,id);
-    initDotComplete(savedElDot, savedElDot.color);
+    var dotData = {id: id, url: url};
+    storedElements.push(dotData);
+    chrome.runtime.sendMessage({message: 'storedElement', stored: dotData});
+    var savedElDot = getAndRemoveById(waitingDots,id);
+    initDotComplete(savedElDot, true);
     $(savedElDot).find('a').attr('href', url);
 };
 
-// TODO: specify exact element that failed -- turn dot bad color with message -- try again & delete option
 var elementSaveFailed = function(id) {
-    var savedElDot = getElementById(currWait,id);
-    initDotComplete(savedElDot, typeToColor[FAILTYPE]);
-    savedElDot = $(savedElDot);
-    savedElDot.find('.success').hide();
-    savedElDot.find('.fail').show();
-    savedElDot.find('.remove').on('click', function() {removeDot(id);});
-    savedElDot.find('.try-again').on('click', function() {reParse(id);});
+    var savedElDot = getAndRemoveById(waitingDots,id);
+    if(savedElDot) {
+        failedDots.push(savedElDot);
+        initDotComplete(savedElDot, false);
+        savedElDot = $(savedElDot);
+        savedElDot.find('.success').hide();
+        savedElDot.find('.fail').css({display: 'table-cell'});
+        savedElDot.find('.remove').on('click', function(e) {preventDefault(e);removeDot(id);});
+        savedElDot.find('.try-again').on('click', function(e) {preventDefault(e);reParse(id);});
+    } else saveFailed = true;
 };
 
 var reParse = function(id) {
-    var savedElDot = getElementById(currWait, id);
-    var savedElement = getElementById(savedElements, id);
+    var savedElDot = getAndRemoveById(failedDots, id);
+    waitingDots.push(savedElDot);
+    var savedElement = getElementById(parsedElements, id);
 
     // Reset dot to initial settings
     leaveSavedDot.call(savedElDot);
@@ -184,7 +357,6 @@ var reParse = function(id) {
     $(savedElDot).find('.try-again').off('click');
     $(savedElDot).css({cursor: 'wait'});
     savedElDot.interval = setInterval(function(){savingInProgress(savedElDot)}, COLORINTERVAL);
-    savedElDot.timeout = setTimeout(function(){elementSaveFailed(id);}, WAITTILLERROR);
 
     // Re-attempt parsing flow
     var targetClass = $(savedElement).attr('class');
@@ -194,43 +366,27 @@ var reParse = function(id) {
 };
 
 var removeDot = function(id) {
-    var savedElDot = getAndRemoveById(currWait,id);
-    var savedElement = getAndRemoveById(savedElements,id);
+    var savedElDot = getAndRemoveById(failedDots,id);
+    var savedElement = getAndRemoveById(parsedElements,id);
     turnOnDrag(savedElement);
-
-    // TODO: if there are elements beneath savedElDot animate upwards
-    removeFromArray(findHolderParent(savedElement).stored,savedElDot);
+    removeFromArray(findHolder(savedElement).stored,savedElDot);
     savedElDot.remove();
 };
 
 var flushDots = function() {
-    savedElements.forEach(function(el) {
+    parsedElements.forEach(function(el) {
         el.dragOff = false;
-        var stored = findHolderParent(el).stored;
+        var stored = findHolder(el).stored;
         stored.forEach(function(dot){
             dot.remove();
             removeFromArray(stored, dot);
         });
     });
+    parsedElements = [];
 };
 
-var removeFromArray = function(array, value) {
-    var index = array.indexOf(value);
-    if (index > -1) {
-        array.splice(index, 1);
-    }
-};
-
-var getElementById = function(array, key) {
-    var value;
-    array.forEach(function(el){
-        if(el.refId == key) value = el;
+$(window).resize(function(){
+    parsedElements.forEach(function(el) {
+        setDotPosition(el);
     });
-    return value;
-};
-
-var getAndRemoveById = function(array, key) {
-    var value = getElementById(array,key);
-    if(value) removeFromArray(array,value);
-    return value;
-};
+});

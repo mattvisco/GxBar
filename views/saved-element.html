@@ -1,14 +1,15 @@
 <div class="circle saved-element">
     <div class="content">
-        <div class="success">
-            <h1><span class="type">Post</span> Saved!</h1>
-            <p><a>View in G+Now</a></p>
+        <div class="inner-circle">
+            <div class="text-container success">
+                <p><span class="type">Post</span> Saved</p>
+                <p class="viewable"><a> <span class="small">View at</span> <br> <img id="gnow-logo"></a></p>
+            </div>
+            <div class="text-container fail">
+                <p>Save Failed</p>
+                <span class="new-line"><button class="try-again">Try Again</button></span>
+                <span class="new-line"><button class="remove">Remove</button></span>
+            </div>
         </div>
-        <div class="fail">
-            <h1>Save Failed</h1>
-            <p class="try-again">Try Again</p>
-            <p class="remove">Remove</p>
-        </div>
-        <!--<button>Remove</button> TODO: add remove ability-->
     </div>
 </div>

@@ -9,7 +9,8 @@ var config = {
 var keys = {
     USERACTIVE: 'UserActive',
     XBAR: 'xbar',
-    HIGHLIGHT: 'highlight'
+    HIGHLIGHT: 'highlight',
+    STORED: 'storedArr'
 };
 
 var messages = {

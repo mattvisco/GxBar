@@ -95,11 +95,14 @@ var getTitle = function(target) {
 };
 
 var makeStandardDate = function(date) {
+    if (date.split('-').length == 3) return date;
     var currDate = new Date();
     var month = currDate.getMonth() + 1;
     var day = currDate.getDate();
     var year = currDate.getFullYear();
 
+    date = date.split(' - ');
+    date = date[0];
     var firstEl = date.split(' ')[0];
     if (monthNamesShort.indexOf(firstEl) <= -1 && monthNames.indexOf(firstEl) <= -1) {
         if (firstEl == "Yesterday") date = date.replace("Yesterday", month + " " + (day - 1) + ",");
@@ -122,9 +125,9 @@ var getDate = function(target) {
     var targetExists =  target.length;
     if (targetExists) {
         var postDate = target.text();
-        if ( postDate.indexOf('-') <= -1 ){
+        //if ( postDate.indexOf('-') <= -1 ){
             postDate = makeStandardDate(postDate);
-        }
+        //}
         var date = new Date(postDate);
         return ['date', date.toISOString()];
     }
@@ -413,7 +416,7 @@ var getPostPromises = function(target) {
     var embeded = target.find(EMBEDDOT);
     var desc, embedPromise;
 
-    var id = getId(target,POSTTYPE);
+    //var id = getId(target,POSTTYPE);
     var userPromise = getUserPromise(target, USERLINKPOST);
     var communityPromise = getCommunityPromise(commPost, COMMUNITYLINKPOST);
     var date = getDate(dateLink);
@@ -424,7 +427,7 @@ var getPostPromises = function(target) {
     if ( !checkRepost(description) && !checkEmbed(description) ) desc = getDescription(description);
     if ( !checkRepost(embeded) ) embedPromise = getEmbedPromise(embeded);
 
-    return [id, userPromise, communityPromise, date, url, postAct, commentsPromise, repostPromise, desc, embedPromise];
+    return [userPromise, communityPromise, date, url, postAct, commentsPromise, repostPromise, desc, embedPromise];
 };
 
 // ************************************ //
@@ -516,8 +519,7 @@ var embededElementParser = function(target, targetClass) {
 
 var communityParser = function(target, targetClass) {
     if ( targetClass == COMMUNITYPOST || targetClass == COMMUNITYLINKPOST ) {
-        if (targetClass == COMMUNITYPOST)
-            target = currDragged.target.find(COMMUNITYLINKPOSTDOT);
+        if (targetClass == COMMUNITYPOST) target = target.find(COMMUNITYLINKPOSTDOT);
         var url = target.prop('href');
         return get(url).then($.parseHTML).then(
             function (response) {
@@ -539,14 +541,12 @@ var getcommunityPromises = function(target, targetClass) {
     }
 
     var parentName = communityParentNames[targetClass];
-    if (parentName) {
-        target = target.parents(parentName);
-    }
+    if (parentName) target = target.parents(parentName);
 
     var communityOptionsClass = communityFieldToClass[targetClass];
     if (communityOptionsClass) {
         if (!url) {
-            if ( target.attr('class') == COMMUNITY ) url = getUrl(target.parent());
+            if ( targetClass == COMMUNITY ) url = getUrl(target.parent());
             else url = getUrl(target.find(communityOptionsClass.url));
         }
         if (!title) title = getTitle(target.find(communityOptionsClass.title));

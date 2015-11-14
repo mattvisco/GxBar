@@ -20,19 +20,13 @@ var preventDefault = function(e) {
 var findTitle = function(type) {
     switch(type) {
         case USERTYPE:
-            return 'Save User';
-        case POSTTYPE:
-            return 'Save Post';
-        case EVENTTYPE:
-            return 'Save Event';
+            return 'Person';
         case HANGOUTTYPE:
-            return 'Save Hangout Event';
+            return 'On Air Video';
         case EMBEDTYPE:
-            return 'Save Embeded Content';
-        case COMMUNITYTYPE:
-            return 'Save Community';
+            return 'Media from Post';
         default:
-            return 'Whoa, you have succesfully hacked the mainframe';
+            return type;
     }
 };
 
@@ -53,10 +47,11 @@ var setDropPosition = function(dropZone, target, e) {
 var showDropZone = function(target, e, type) {
     // Set position
     var position = setDropPosition(dropZone, target, e);
-    dropZone.css({ left: position['left'], top: position['top'] });
+    dropZone.css({left: position['left'], top: position['top'], color: typeToColor[type]});
+    dropZone.find('.inner-circle').css({background: typeToInner[type]});
 
     // Set title
-    dragType.text(findTitle(type));
+    dragType.find('.type').text(findTitle(type));
 
     dropZone.show();
 };
@@ -70,11 +65,8 @@ var onDragStart = function(e) {
     var targetClass = target.attr('class');
     var type = getType(target,targetClass);
     if (type && !currDragged) {
-        successBox.hide();
         targetClass = targetClass.replace(' x_cursor', '');
-        currDragged = new DragElement({target: target, targetClass: targetClass, type: type, id: getElementId(target,type)});
-        console.log(e.originalEvent.dataTransfer);
-        console.log(typeToImage[type]);
+        currDragged = new DragElement({target: target, targetClass: targetClass, type: type, id: getElementId(target,type,targetClass)});
         e.originalEvent.dataTransfer.setDragImage(typeToImage[type], 75, 75);
         showDropZone(target, e, type);
         currDragFunction = pauseDrag;
@@ -111,7 +103,8 @@ var resetDragDefaults = function() {
     currDragFunction = enableDrag;
     currDragState = true;
     pauseDrag(currDragState);
-    $(this).css({ backgroundColor: DROPZONE });
+    $(this).find('.inner-circle').removeClass('saving');
+    dragType.html("Drag <span class='type'></span> Here");
     entered = false;
     currDragged = null;
 };
@@ -124,8 +117,8 @@ var onDrop = function(e) {
     currDragged.parser().then(sendToServer); // Parse current element
 
     // Change to drop color and display 'saved' (upon callback of successful upload)
-    target.css({ backgroundColor: typeToColor[type] });
-    dragType.text("Saving...");
+    //target.css({ backgroundColor: typeToColor[type] });
+    dragType.text("Saving");
     setTimeout(function() {
         storedElement(dragElement,type);
         dropZone.hide(0, resetDragDefaults);
@@ -136,15 +129,18 @@ var onDrop = function(e) {
 
 var onDragEnter = function(e) {
     entered = true;
+    dragType.text("release to save");
     // Highlight box
-    $(e.target).css({ backgroundColor: DROPZONEENTER });
+    $(e.target).find('.inner-circle').addClass('saving');
     return preventDefault(e);
 };
 
 var onDragLeave = function(e) {
     entered = false;
     // Unhighlight box
-    $(e.target).css({ backgroundColor: DROPZONE });
+    dragType.html("Drag <span class='type'></span> Here");
+    dragType.find('.type').text(findTitle(currDragged.type));
+    $(e.target).find('.inner-circle').removeClass('saving');
     return preventDefault(e);
 };
 
