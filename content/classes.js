@@ -61,6 +61,7 @@ var ContactInfo = function(options) {
 };
 
 var Post = function(options) {
+    this.id = 'temp';//options['id']; // TODO: remove this
     // Relation to the User class
     this.user = options['user'];
     // Relation to javascript Date Obj (can be interepreted as String)

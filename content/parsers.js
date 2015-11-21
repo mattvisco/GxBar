@@ -25,7 +25,8 @@ var parser = function() {
 var rejector = function(reject) {
     errorHandler(reject, errors.APPENDTRY);
     elementSaveFailed(currParsingId);
-}
+    return;
+};
 
 var get = function(url) {
     // Return a new promise.
@@ -37,12 +38,12 @@ var get = function(url) {
             // This is called even on 404 etc
             // so check the status
             if (client.status == 200) resolve(client.response);
-            else reject(errors.parseStatusError(client.status));
+            else reject({errors:errors.parseStatusError(client.status)});
         };
 
         // Handle network errors
         client.onerror = function() {
-            reject(errors.NETWORKPARSEERR);
+            reject({errors: errors.NETWORKPARSEERR});
         };
 
         // Make the request
@@ -52,10 +53,14 @@ var get = function(url) {
 
 var getOptions = function(arr) {
     var options = {};
-    for(var i = 0; i < arr.length; i++) {
-        if(arr[i]) options[arr[i][0]] = arr[i][1];
+    if(arr){
+        for(var i = 0; i < arr.length; i++) {
+            if(arr[i]) options[arr[i][0]] = arr[i][1];
+        }
+        return options;
+    } else {
+        rejector({errors:errors.GENERALERROR});
     }
-    return options;
 };
 
 var getImagePromise = function(target) {
@@ -76,11 +81,6 @@ var getImagePromise = function(target) {
             }
         });
     }
-};
-
-var getId = function(target,type) {
-    var targetExists =  target.length;
-    if (targetExists) return ['id', getElementId(target,type)];
 };
 
 var getUrl = function(target) {
@@ -416,7 +416,6 @@ var getPostPromises = function(target) {
     var embeded = target.find(EMBEDDOT);
     var desc, embedPromise;
 
-    //var id = getId(target,POSTTYPE);
     var userPromise = getUserPromise(target, USERLINKPOST);
     var communityPromise = getCommunityPromise(commPost, COMMUNITYLINKPOST);
     var date = getDate(dateLink);
@@ -485,11 +484,13 @@ var getEmbedUrlTitle = function(target) {
     var videoUrlTitle = target.find(EMBEDVIDEOURLTITLEDOT);
     var urlPhoto = target.find(EMBEDALLPHOTOSDOT);
     var urlTitle = target.find(EMBEDLINKDOT);
+    var urlCommunity = target.find(EMBEDCOMMUNITY);
 
     if ( url = getUrl(urlPhoto) ) title = getTitle(urlPhoto);
     else if ( url = getUrl(articleUrlTitle) ) title = getTitle(articleUrlTitle);
     else if ( url = getUrl(videoUrlTitle) ) title = getTitle(videoUrlTitle);
     else if ( url = getUrl(urlTitle) ) title = getTitle(urlTitle);
+    else if ( url = getUrl(urlCommunity) ) title = getTitle(urlCommunity);
 
     if(url) return [url, title];
 };

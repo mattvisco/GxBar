@@ -91,11 +91,11 @@ var enableDrag = function(drag, updateElement) {
 };
 
 var setDraggables = function(drag, nondrag, select, onlyHighlight, updateElement, pause) {
+    var dragElement;
     for (var dragIndex in draggable) {
         if (checkEventPageDraggable(draggable[dragIndex])) {
             // If mutation passes in updateElement than find update any draggables withing element
             // otherwise search for draggables within entire doc
-            var dragElement;
             if(updateElement) {
                 if (convertClassFormat(updateElement.attr('class')) == draggable[dragIndex]) dragElement = updateElement;
                 else dragElement = updateElement.find(draggable[dragIndex]);
@@ -135,7 +135,6 @@ var setDraggables = function(drag, nondrag, select, onlyHighlight, updateElement
     }
     if(!onlyHighlight){
         for( var nonDragIndex in nonDraggable ) {
-            var dragElement;
             if(updateElement) {
                 if (convertClassFormat(updateElement.attr('class')) == nonDraggable[nonDragIndex]) dragElement = updateElement;
                 else dragElement = updateElement.find(nonDraggable[nonDragIndex]);
@@ -277,7 +276,6 @@ userActivePort.onMessage.addListener(function(response) {
     } else if (response.message == keys.HIGHLIGHT) {
         highlightState = response.value;
         userActivePort.postMessage({message: "checkStored"});
-        //setup();
     } else if (response.message == 'storedArray') {
         storedElements = response.storedArr;
         setup();
@@ -286,19 +284,24 @@ userActivePort.onMessage.addListener(function(response) {
 
 chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
     if (request.message == 'init') {
-        if (request.userActive) {
-            storedElements = request.storedArr;
-            highlightState = true;
-            if (!beenSetup) {
-                setup();
+        // set up onboarding again
+        //if (request.onboarding) {
+        //    startOnboarding();
+        //} else {
+            if (request.userActive) {
+                storedElements = request.storedArr;
+                highlightState = true;
+                if (!beenSetup) {
+                    setup();
+                }
+                else {
+                    enableExtension(true);
+                }
+            } else if(beenSetup) {
+                storedElements = [];
+                enableExtension(false);
             }
-            else {
-                enableExtension(true);
-            }
-        } else if(beenSetup) {
-            storedElements = [];
-            enableExtension(false);
-        }
+        //}
     }
     else if (request.message == keys.XBAR) enableExtension(request.value);
     else if (request.message == keys.HIGHLIGHT) enableHighlight(request.value);

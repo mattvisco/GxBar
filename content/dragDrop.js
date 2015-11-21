@@ -37,7 +37,13 @@ var setDropPosition = function(dropZone, target, e) {
     var left = e.originalEvent.clientX - DRAGIMAGESIZE/2 - dropZone.outerWidth() - SPACING; // Position dropzone to the left of target
 
     // Ensure dropzone isn't out of screen left
-    if ( left < 0 ) left = e.originalEvent.clientX + DRAGIMAGESIZE/2 + SPACING; // TODO: get drag image size from curr drag image
+    if ( left < 0 ) left = e.originalEvent.clientX + DRAGIMAGESIZE/2; // TODO: get drag image size from curr drag image
+    // Ensure dropzone isn't out of screen right
+    if ( left + dropZone.outerWidth() > $(window).width() ) {
+        left = e.originalEvent.clientX;
+        top = e.originalEvent.clientY;
+    }
+
     // Ensure dropzone isn't out of screen (top or bottom)
     top = Math.min(maxTop, Math.max(minTop, top));
 
@@ -78,12 +84,12 @@ var onDragStart = function(e) {
 };
 
 var getObjectType = function(obj) {
-    if(obj instanceof Post) return 'Post';
-    else if(obj instanceof User) return 'User';
-    else if(obj instanceof Community) return 'Community';
-    else if(obj instanceof Hangout) return 'Hangout';
-    else if(obj instanceof Event) return 'Event';
-    else if(obj instanceof EmbededElement) return 'EmbededElement';
+    if(obj instanceof Post) return POSTTYPE;
+    else if(obj instanceof User) return USERTYPE;
+    else if(obj instanceof Community) return COMMUNITYTYPE;
+    else if(obj instanceof Hangout) return HANGOUTTYPE;
+    else if(obj instanceof Event) return EVENTTYPE;
+    else if(obj instanceof EmbededElement) return EMBEDTYPE;
 };
 
 var sendToServer = function(parsedObj) {
@@ -91,9 +97,11 @@ var sendToServer = function(parsedObj) {
     console.log("Parsed:");
     console.log(parsedObj);
 
-    if(parsedObj) {
+    var type = getObjectType(parsedObj);
+    if(parsedObj && $.inArray(type, comingSoon) == -1) {
         chrome.runtime.sendMessage({
-            message: 'store' + getObjectType(parsedObj),
+            message: 'store',
+            type: config.typeToApi(type),
             data: parsedObj
         });
     }
@@ -112,8 +120,6 @@ var resetDragDefaults = function() {
 var onDrop = function(e) {
     var dragElement = currDragged.target.get(0);
     var type = currDragged.type;
-    var target = $(e.target);
-
     currDragged.parser().then(sendToServer); // Parse current element
 
     // Change to drop color and display 'saved' (upon callback of successful upload)

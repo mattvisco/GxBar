@@ -3,18 +3,31 @@
  */
 
 var config = {
-    DOMAIN: "http://gplusnow.com"
+    DOMAIN: "http://gplusnow.com",
+    typeToApi: function(type) {
+        switch(type) {
+            case POSTTYPE:
+                return 'post';
+            case USERTYPE:
+                return 'user';
+            case HANGOUTTYPE:
+                return 'hangout';
+            case EVENTTYPE:
+                return 'event';
+            case EMBEDTYPE:
+                return 'embed';
+            case COMMUNITYTYPE:
+                return 'community';
+        }
+    }
 };
 
 var keys = {
     USERACTIVE: 'UserActive',
     XBAR: 'xbar',
     HIGHLIGHT: 'highlight',
-    STORED: 'storedArr'
-};
-
-var messages = {
-    SUCCESS: 'successfully created post'
+    STORED: 'storedArr',
+    ONBOARDING: 'onboard'
 };
 
 var values = {

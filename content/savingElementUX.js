@@ -20,7 +20,7 @@ var waitingDots = [];
 var parsedElements = [];
 var failedDots = [];
 var saveFailed = false;
-var comingSoon = [COMMUNITYTYPE, HANGOUTTYPE, EVENTTYPE, EMBEDTYPE, USERTYPE];
+var comingSoon = [COMMUNITYTYPE, EMBEDTYPE, USERTYPE]; //HANGOUTTYPE, EVENTTYPE,
 
 var removeFromArray = function(array, value) {
     var index = array.indexOf(value);
@@ -222,7 +222,7 @@ var storedElement = function(dragElement,type) {
             saveFailed = false;
             elementSaveFailed(id);
         }
-        if($.inArray(type, comingSoon) != -1 ) { // TODO: store {refId}
+        if($.inArray(type, comingSoon) != -1 ) {
             setTimeout(function() {
                 var dotData = {id: id};
                 storedElements.push(dotData);

@@ -2,7 +2,7 @@
  * Created by M on 9/15/15.
  */
 
-var post = function(url, data, id) {
+var post = function(url, data) {
     return new Promise(function(resolve, reject) {
         var client = new XMLHttpRequest();
         client.open('POST', url);
@@ -54,18 +54,20 @@ var checkToken = function(data) {
     );
 };
 
-// TODO: be sure this is the right id
-var storePost = function(data, tabId) {
-    var url = config.DOMAIN + "/api/post/";
+var store = function(data, type, tabId) {
+    var url = config.DOMAIN + "/api/" + type + '/';
     var id = data.url;
-    data = makeDataPackage(data, 'post');
+    data = makeDataPackage(data, type);
     if (!data.errors) {
         post(url, data, id).then(JSON.parse).then(
             function(response){
                 if(response.errors) {
                     errorHandler(response);
                     sendErrorMessage(tabId, id);
-                } else if (response.message == messages.SUCCESS) sendSuccessMessage('Post', response.post_id, tabId, id);
+                } else {
+                    var typeId = type+'_id';
+                    sendSuccessMessage(type, response[typeId], tabId, id);
+                }
             },
             function(reject){
                 errorHandler(reject, errors.APPENDTRY);
@@ -76,7 +78,7 @@ var storePost = function(data, tabId) {
 };
 
 var sendSuccessMessage = function(type, id, tabId, elId) {
-    var url = config.DOMAIN + '/' + id;
+    var url = config.DOMAIN + '/' + type + '/' + id;
     if(tabId) chrome.tabs.sendMessage(tabId, {message: 'success', id: elId, url: url});
 };
 

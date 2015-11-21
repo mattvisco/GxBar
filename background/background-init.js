@@ -6,6 +6,7 @@
 // ******************************** //
 // *******  Context Menus   ******* //
 // ******************************** //
+//window.chrome.storage.local.clear();
 
 var showForPages = ["https://plus.google.com/*", "http://plus.google.com/*"];
 
@@ -215,9 +216,25 @@ var initialize = function(userInfo) {
 
         // Disable context menu
         disableContextMenu();
+
+        // TODO: start of onboarding code
+        //storage.get(keys.ONBOARDING, function(value){
+        //    var doOnboard = false;
+        //    if (!value) {
+        //        doOnboard = true;
+        //        storage.set(keys.ONBOARDING, doOnboard);
+        //        chrome.tabs.create({ url: "https://plus.google.com/" }); // auto take to G+
+        //    }
+        //    chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
+        //        if(tabs[0].id) chrome.tabs.sendMessage(tabs[0].id, {message: 'init', userActive: config.userActive, onboarding: doOnboard});
+        //    });
+        //});
+
+        // TODO: remove once onboarding added
         chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
             if(tabs[0].id) chrome.tabs.sendMessage(tabs[0].id, {message: 'init', userActive: config.userActive});
         });
+
     }
     var dataToSend = {
         message: 'init',
@@ -268,7 +285,7 @@ chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
             if(tabs[0].id) chrome.tabs.sendMessage(tabs[0].id, {message: 'flush-dots'});
         });
     }
-    else if ( request.message == 'storePost' ) storePost(request.data, sender.tab.id);
+    else if ( request.message == 'store' ) store(request.data, request.type, sender.tab.id);
     else if ( request.message == 'checkActive' ) sendResponse({userActive: config.userActive, firstName: config.firstName});
     else if ( request.message == 'storedElement' ) storeSavedElement(request.stored);
 });

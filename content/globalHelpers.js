@@ -93,7 +93,8 @@ var getElementId = function(element, type, targetClass) {
             }
             break;
         case EMBEDTYPE:
-            id = getEmbedUrlTitle(element)[0][1];
+            if(getEmbedUrlTitle(element)) id = getEmbedUrlTitle(element)[0][1];
+            else id = 'no-id-found';
             break;
         case EVENTTYPE:
         case HANGOUTTYPE:
