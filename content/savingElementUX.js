@@ -10,11 +10,11 @@ var FAILEDCOLOR = '#242424';
 var INNERFAILEDCOLOR = '#202020';
 var LITTLEZ = 2;
 var BIGZ = 999999999999999;
-var COMINGSOONDELAY = 5000;
+var COMINGSOONDELAY = 3000;
+var ONBOARDINGDELAY = 3000;
 var COLORINTERVAL = 200;
 var ANIMATEDOWNSPEED = 500;
 var HOVERANIMATE = 300;
-
 
 var waitingDots = [];
 var parsedElements = [];
@@ -22,6 +22,7 @@ var failedDots = [];
 var saveFailed = false;
 var comingSoon = [COMMUNITYTYPE, EMBEDTYPE, USERTYPE]; //HANGOUTTYPE, EVENTTYPE,
 
+// Helper function to remove a specific element from array
 var removeFromArray = function(array, value) {
     var index = array.indexOf(value);
     if (index > -1) {
@@ -29,6 +30,7 @@ var removeFromArray = function(array, value) {
     }
 };
 
+// Helper function that finds element in array by ID
 var getElementById = function(array, key) {
     var value = false;
     array.forEach(function(el){
@@ -37,12 +39,14 @@ var getElementById = function(array, key) {
     return value;
 };
 
+// Helper function that finds element by id and removes it
 var getAndRemoveById = function(array, key) {
     var value = getElementById(array,key);
     if(value) removeFromArray(array,value);
     return value;
 };
 
+// Toggles the "X" cursor
 var toggleXCursor = function(el, add) {
     nonDraggable.forEach(function(nonDrag){
         $(el).find(nonDrag).each(function(){
@@ -52,6 +56,7 @@ var toggleXCursor = function(el, add) {
     });
 };
 
+// Turns off dragging of specific element
 var turnOffDrag = function(dragElement) {
     $(dragElement)
         .attr("draggable", false)
@@ -65,6 +70,7 @@ var turnOffDrag = function(dragElement) {
     parsedElements.push(dragElement);
 };
 
+// Turns on dragging of specific element
 var turnOnDrag = function(dragElement) {
     $(dragElement)
         .attr("draggable", true)
@@ -77,6 +83,7 @@ var turnOnDrag = function(dragElement) {
     dragElement.dragOff = false;
 };
 
+// Finds the holder for a draggable element
 var findHolder = function(dragElement) {
     var className = $(dragElement).attr('class').replace(' x_cursor', '');
     if (className == USERIMAGEPAGE) return $(dragElement).parents(USERPAGEPARENTPINDOT).get(0);
@@ -90,6 +97,7 @@ var findHolder = function(dragElement) {
     else return dragElement;
 };
 
+// Get the amount element should be positioned based on class name
 var getShift = function(dragElement) {
     var shift = {left: 0, top: 0};
     var className = $(dragElement).attr('class').replace('x_cursor', '');
@@ -108,6 +116,7 @@ var getShift = function(dragElement) {
     return shift;
 };
 
+// Position dot in correct place, this is mainly for resizing because subelements get moved
 var setDotPosition = function(dragElement) {
     var className = $(dragElement).attr('class');
     var type = getType(dragElement, className);
@@ -130,6 +139,7 @@ var setDotPosition = function(dragElement) {
     }
 };
 
+// Adds a saved dot to an element, no animation or wait time
 var addDotToEl = function(dragElement, type, id, url) {
     dragElement.refId = id;
     turnOffDrag(dragElement);
@@ -173,6 +183,7 @@ var addDotToEl = function(dragElement, type, id, url) {
     activateListeners.call($(currSavedDot));
 };
 
+// Adds a saved dot to an element, with animation / wait for success store
 var storedElement = function(dragElement,type) {
     var id = getElementId(dragElement, type, $(dragElement).attr('class'));
     dragElement.refId = id;
@@ -218,11 +229,16 @@ var storedElement = function(dragElement,type) {
         $(this).css({zIndex: LITTLEZ});
         var minScroll = holderPos.top - $('.Uc').height() + initTop; // Uc is the banner height
         if($('body').scrollTop() > minScroll) $('body').animate({scrollTop: minScroll});
-        if (saveFailed) {
+
+        if (onboarding) {
+            setTimeout(function() {
+                storedElements.push({id: id});
+                initDotComplete(currSavedDot, true, false);
+            }, ONBOARDINGDELAY); // Delay for style
+        } else if(saveFailed) {
             saveFailed = false;
             elementSaveFailed(id);
-        }
-        if($.inArray(type, comingSoon) != -1 ) {
+        } else if($.inArray(type, comingSoon) != -1 ) {
             setTimeout(function() {
                 var dotData = {id: id};
                 storedElements.push(dotData);
@@ -233,6 +249,7 @@ var storedElement = function(dragElement,type) {
     });
 };
 
+// Iterate through colors when waiting for store to complete
 var savingInProgress = function(dot) {
     var type = types[dot.index];
     if (type == HANGOUTTYPE) {
@@ -244,9 +261,11 @@ var savingInProgress = function(dot) {
     if(dot.index >= types.length) dot.index = 0;
 };
 
+// Upon mouseEnter enlarge circle, display content
 var enterSavedDot = function() {
     if (!this.isAnimatingSave) {
         this.isAnimatingSave = true;
+        if(onboarding) showDoneTitle();
         var currPos = $(this).position();
         var posFactor;
         if ( this.inEvent ) posFactor = 10;
@@ -265,6 +284,7 @@ var enterSavedDot = function() {
     this.callBackFn = enterSavedDot;
 };
 
+// Upon mouseLeave minimize circle, hide content
 var leaveSavedDot = function() {
     if(!this.isAnimatingSave) {
         this.isAnimatingSave = true;
@@ -285,6 +305,7 @@ var leaveSavedDot = function() {
     } else this.callBackFn = leaveSavedDot;
 };
 
+// Set variables of animation done
 var completeAnimation = function(saveDot, fn) {
     saveDot.isAnimatingSave = false;
     if(saveDot.callBackFn) {
@@ -293,6 +314,7 @@ var completeAnimation = function(saveDot, fn) {
     }
 };
 
+// Enable the mouseenter/mouseleave events
 var activateListeners = function() {
     $(this).off('mouseenter', activateListeners);
     // TODO: add count on enter/leave -- don't trigger immediately
@@ -301,6 +323,7 @@ var activateListeners = function() {
     this.listenersActivated = true;
 };
 
+// Set circle to complete mode, enlarge and activate listeners
 var initDotComplete = function(dot, complete, coming) {
     clearInterval(dot.interval);
     $(dot).css({background: SAVEDCOLOR, cursor: 'default'});
@@ -311,17 +334,21 @@ var initDotComplete = function(dot, complete, coming) {
         $(dot).find('.inner-circle').addClass('half-circle');
         $(dot).find('.viewable .small').text('Not Yet Viewable');
     }
-    enterSavedDot.call(dot);
-    $(dot).on('mouseenter',activateListeners);
-    setTimeout(function(){
-        if(!dot.listenersActivated) {
-            leaveSavedDot.call(dot);
-            activateListeners.call(dot);
-        }
-    }, 2000);
+    if(onboarding) activateListeners.call(dot);
+    else {
+        enterSavedDot.call(dot);
+        $(dot).on('mouseenter',activateListeners);
+        setTimeout(function () {
+            if (!dot.listenersActivated) {
+                leaveSavedDot.call(dot);
+                activateListeners.call(dot);
+            }
+        }, 2000);
+    }
     enableDrag(true);
 };
 
+// If element saved, send data to background
 var elementSaved = function(id,url) {
     var dotData = {id: id, url: url};
     storedElements.push(dotData);
@@ -331,6 +358,7 @@ var elementSaved = function(id,url) {
     $(savedElDot).find('a').attr('href', url);
 };
 
+// If element failed set fail style, enable fail buttons
 var elementSaveFailed = function(id) {
     var savedElDot = getAndRemoveById(waitingDots,id);
     if(savedElDot) {
@@ -344,6 +372,7 @@ var elementSaveFailed = function(id) {
     } else saveFailed = true;
 };
 
+// Reparse calls parsing function again and attempts to resend it to server
 var reParse = function(id) {
     var savedElDot = getAndRemoveById(failedDots, id);
     waitingDots.push(savedElDot);
@@ -365,6 +394,7 @@ var reParse = function(id) {
     reParseEl.parser().then(sendToServer);
 };
 
+// Remove dot from class
 var removeDot = function(id) {
     var savedElDot = getAndRemoveById(failedDots,id);
     var savedElement = getAndRemoveById(parsedElements,id);
@@ -373,6 +403,7 @@ var removeDot = function(id) {
     savedElDot.remove();
 };
 
+// Remove all dots on display
 var flushDots = function() {
     parsedElements.forEach(function(el) {
         el.dragOff = false;
@@ -385,6 +416,7 @@ var flushDots = function() {
     parsedElements = [];
 };
 
+// On resize reposition dots
 $(window).resize(function(){
     parsedElements.forEach(function(el) {
         setDotPosition(el);

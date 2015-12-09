@@ -136,7 +136,7 @@ var EMBEDURLTITLEPARENTDOT = '.rCauNb';
 var EMBEDURLTITLEPARENTDRIVEDOT = '.iT';
 var EMBEDDESCDOT = '.f34nqb';
 var EMBEDVIDEOURLTITLEDOT = '.kq.ot-anchor';
-var EMBEDCOMMUNITY = '.d-s.ob.TW.eW.ob'
+var EMBEDCOMMUNITY = '.d-s.ob.TW.eW.ob';
 // To turn off cursor pointer
 var EMBEDPLAYDOT = '.bc.vf';
 var EMBEDOVERLAYDOT = '.Rl.RJ';
@@ -248,12 +248,12 @@ typeToImage[COMMUNITYTYPE] = new Image();
 typeToImage[COMMUNITYTYPE].src = chrome.extension.getURL('../images/community.png');
 
 var typeToColor = {};
-typeToColor[USERTYPE] = '#e21350';
-typeToColor[POSTTYPE] = '#4f8aff';
-typeToColor[EVENTTYPE] = '#9a05e1';
-typeToColor[HANGOUTTYPE] = '#f08c1e';
-typeToColor[EMBEDTYPE] = '#0095cb';
-typeToColor[COMMUNITYTYPE] = '#8ab300';
+typeToColor[USERTYPE] = '#8e0f50';
+typeToColor[POSTTYPE] = '#3b00ec';
+typeToColor[EVENTTYPE] = '#5106b8';
+typeToColor[HANGOUTTYPE] = '#f62309';
+typeToColor[EMBEDTYPE] = '#2082cb';
+typeToColor[COMMUNITYTYPE] = '#259300';
 
 var typeToInner = {};
 typeToInner[USERTYPE] = '#f0e2e6';

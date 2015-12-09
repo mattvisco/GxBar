@@ -2,19 +2,19 @@
  * Created by M on 9/16/15.
  */
 
-// Submission Listener
+// Submission Listener -- if user clicks submit on login form notify api
 $('#login-form').submit(function( event ) {
     event.preventDefault();
     var email = $('input[name=email]').val();
     var password = $('input[name=password]').val();
-    var data = {'email': email, 'password': password}; // TODO: take out first_name
-    // If submitType is undefined, it is assumed that user is logging in (i.e. for enter press)
+    var data = {'email': email, 'password': password};
     chrome.runtime.sendMessage({
         message: 'login',
         data: JSON.stringify(data)
     });
 });
 
+// Register Listener -- if user clicks submit on register form notify api
 $('#register-form').submit(function( event ) {
     event.preventDefault();
     var password = $('input[name=reg_password]').val();
@@ -37,11 +37,13 @@ $('#register-form').submit(function( event ) {
     }
 });
 
+// Logout listener -- if user clicks logout notify api
 $('#logout').click(function( event ) {
     event.preventDefault();
     chrome.runtime.sendMessage({message: 'logout'}, function(response) { if(!response.userActive) setPopupDisplay() });
 });
 
+// Set popup based on current logged in status
 var setPopupDisplay = function(name) {
     var login = $('#logged-out');
     var loggedIn = $('#logged-in');
@@ -64,11 +66,13 @@ var setPopupDisplay = function(name) {
     }
 };
 
+// Check if active user and then set up popup display
 chrome.runtime.sendMessage({message: 'checkActive'}, function(response) {
     if(response.userActive) setPopupDisplay(response.firstName);
     else setPopupDisplay();
 });
 
+// If user logs in, set popup display
 chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
     if ( request.message == 'init' && request.userActive ) setPopupDisplay(request.firstName);
 });

@@ -61,7 +61,6 @@ button:active {
 .pop-up-box {
     width: 300px;
     height: 160px;
-    /*padding: 20px;*/
     border-radius: 2%;
     background-color: black;
     opacity: 0.8;
@@ -251,4 +250,78 @@ button:active {
     padding-top: 15px;
     text-align: center;
     font-size: 1.5em;
+}
+
+/* ONBOARDING */
+#onboard {
+    display: block;
+    font-size: 20px;
+    line-height: 24px;
+}
+
+#onboard .inner-container {
+    position: relative;
+    margin: 15px;
+    width: 270px;
+    height: 140px;
+}
+
+#onboard-drop, #onboard-go-to-element, #onboard-done {
+    display: none;
+}
+
+#pager {
+    /* you can add positioning properties here if needed */
+    position: absolute;
+    bottom: 0;
+    width: 90px; /* change as required */
+    padding: 0;
+    height: 14px;
+    z-index: 999;
+}
+
+#pager span {
+    display: block;
+    float: left;
+    width: 10px;
+    height: 10px;
+    text-indent: -999em;
+    background: #707173;
+    opacity: .2;
+    border-radius: 10px; /* must be the same as width and height */
+    -moz-border-radius: 10px;
+    -webkit-border-radius: 10px;
+    margin-right: 10px;
+}
+
+#pager span.active {
+    background: #707173; /* color when active */
+    opacity: 1;
+}
+
+#logo-corner {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    height: 100px;
+    width: 100px;
+}
+
+#logo-corner.start {
+    background: url('chrome-extension://__MSG_@@extension_id__/images/step1_bg.png') !important;
+}
+
+#logo-corner.drop {
+    background: url('chrome-extension://__MSG_@@extension_id__/images/step2_bg.png') !important;
+}
+
+#logo-corner.go-to-element {
+    background: url('chrome-extension://__MSG_@@extension_id__/images/step3_bg.png') !important;
+    height: 80px;
+}
+
+#logo-corner.done {
+    background: url('chrome-extension://__MSG_@@extension_id__/images/step4_bg.png') !important;
+    height: 80px;
+    width: 90px;
 }

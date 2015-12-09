@@ -3,18 +3,23 @@
  */
 // background-init.js
 
+// For testing -- if need to clear local storage uncomment
+window.chrome.storage.local.clear();
+
 // ******************************** //
 // *******  Context Menus   ******* //
 // ******************************** //
-//window.chrome.storage.local.clear();
 
+// Only show full context menu on these pages aka Google Plus
 var showForPages = ["https://plus.google.com/*", "http://plus.google.com/*"];
 
+// Create drop down context if on G+
 chrome.contextMenus.create({
     type: 'separator',
     "documentUrlPatterns": showForPages
 });
 
+// Create a link to G+Now always
 chrome.contextMenus.create({
     'title': 'Go to G+Now',
     'contexts': ['all'],
@@ -25,11 +30,13 @@ chrome.contextMenus.create({
     }
 });
 
+// Separate link from enabling/disable actions
 window.chrome.contextMenus.create({
     type: 'separator',
     "documentUrlPatterns": showForPages
 });
 
+// Disable highlighting button
 var disableHighlight = chrome.contextMenus.create({
     "title": "Disable highlighting",
     "documentUrlPatterns": showForPages,
@@ -38,6 +45,7 @@ var disableHighlight = chrome.contextMenus.create({
     }
 });
 
+// Enable highlighting option
 var enableHighlight = chrome.contextMenus.create({
     "title": "Enable highlighting",
     "documentUrlPatterns": showForPages,
@@ -46,6 +54,7 @@ var enableHighlight = chrome.contextMenus.create({
     }
 });
 
+// Disable extension option
 var disableXbar = chrome.contextMenus.create({
     "title": "Disable GX Extension",
     "documentUrlPatterns": showForPages,
@@ -54,6 +63,7 @@ var disableXbar = chrome.contextMenus.create({
     }
 });
 
+// Enable extension option
 var enableXbar = chrome.contextMenus.create({
     "title": "Enable GX Extension",
     "documentUrlPatterns": showForPages,
@@ -66,6 +76,7 @@ var enableXbar = chrome.contextMenus.create({
 // **********  Storage   ********** //
 // ******************************** //
 
+// Helper function for local storage
 storage = {
     get: function(key, callback) {
         window.chrome.storage.local.get(key, function(outObj) {
@@ -94,8 +105,12 @@ storage = {
 // ***********  Setup   *********** //
 // ******************************** //
 
+// Takes in context type & value and the appropriate disable/enable functions
+// Sets key, value pair and sends message accordingly
 var contextMenuSetState = function(key, value, disable, enable) {
+    // Sets the key, value in local storage
     storage.set(key,value);
+    // Updates the context menus state -- e.g. if disable highlight clicked, turn on the enable highlight option
     if(value == values.CONTEXTON) {
         window.chrome.contextMenus.update(disable, {
             enabled: true
@@ -124,11 +139,14 @@ var contextMenuSetState = function(key, value, disable, enable) {
     }
     var context = true;
     if(value == values.CONTEXTOFF) context = false;
+
+    // Send the new state to content scripts
     chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
         chrome.tabs.sendMessage(tabs[0].id, {message: key, value: context});
     });
 };
 
+// Finds locally stored state of context menu, sets context menu appropriately and sends message to content script
 var contextMenuFindState = function(key, disable, enable, port) {
     storage.get(key, function(value){
         if(value) {
@@ -171,10 +189,12 @@ var contextMenuFindState = function(key, disable, enable, port) {
         }
         var context = true;
         if(value == values.CONTEXTOFF) context = false;
+        // Send state to content scripts
         if(port) port.postMessage({message: key, value: context});
     });
 };
 
+// Disable all context menus
 var disableContextMenu = function() {
     window.chrome.contextMenus.update(disableHighlight, {
         enabled: false
@@ -190,6 +210,8 @@ var disableContextMenu = function() {
     });
 };
 
+// Set configurations -- user active boolean, email, token, first/last name
+// Send configuration message to content and login form
 var initialize = function(userInfo) {
     if (userInfo) {
         // Set user data
@@ -205,6 +227,7 @@ var initialize = function(userInfo) {
         // Check value of xBar toggling variable
         contextMenuFindState(keys.XBAR, disableXbar, enableXbar);
 
+        // Get the saved elements associated with user and send to content script
         storage.get(keys.STORED+config.email,function(value){sendInit(value)});
 
     } else {
@@ -217,22 +240,9 @@ var initialize = function(userInfo) {
         // Disable context menu
         disableContextMenu();
 
-        // TODO: start of onboarding code
-        //storage.get(keys.ONBOARDING, function(value){
-        //    var doOnboard = false;
-        //    if (!value) {
-        //        doOnboard = true;
-        //        storage.set(keys.ONBOARDING, doOnboard);
-        //        chrome.tabs.create({ url: "https://plus.google.com/" }); // auto take to G+
-        //    }
-        //    chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
-        //        if(tabs[0].id) chrome.tabs.sendMessage(tabs[0].id, {message: 'init', userActive: config.userActive, onboarding: doOnboard});
-        //    });
-        //});
-
-        // TODO: remove once onboarding added
-        chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
-            if(tabs[0].id) chrome.tabs.sendMessage(tabs[0].id, {message: 'init', userActive: config.userActive});
+        // If this app was just downloaded, take user to G+ and begin onboarding
+        storage.get(keys.ONBOARDING, function(value){
+            if (!value) chrome.tabs.create({ url: "https://plus.google.com/" }); // auto take to G+ if first time
         });
 
     }
@@ -241,9 +251,11 @@ var initialize = function(userInfo) {
         userActive: config.userActive,
         firstName: config.firstName
     };
+    // Send config to login.js
     chrome.extension.sendMessage(dataToSend);
 };
 
+// Sends configuration data to content script
 var sendInit = function(storedArr) {
     if (!storedArr) {
         storedArr = [];
@@ -253,18 +265,21 @@ var sendInit = function(storedArr) {
         message: 'init',
         userActive: config.userActive,
         storedArr: storedArr
-    }; // TODO: add stored Array to dataToSend
+    };
     chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
         if(tabs[0].id) chrome.tabs.sendMessage(tabs[0].id, dataToSend);
     });
 };
+
+// Log user out by removing all storage
+// TODO: Think about how to remove saveEl[]
 var logout = function() {
     storage.remove(keys.USERACTIVE);
     storage.remove(keys.HIGHLIGHT);
     storage.remove(keys.XBAR);
-    // Think about how to remove saveEl[]
 };
 
+// Store a saved element in local storage
 var storeSavedElement = function(stored) {
     storage.get(keys.STORED+config.email,function(value){
         if (!value) value = [];
@@ -273,47 +288,59 @@ var storeSavedElement = function(stored) {
     });
 };
 
+// Listen for messages from content script
 chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
-    if ( request.message == 'showPage') chrome.pageAction.show(sender.tab.id);
-    else if ( request.message == 'error' ) errorHandler(request);
-    else if ( request.message == 'login' ) login(request.data);
-    else if ( request.message == 'register' ) register(request.data);
-    else if ( request.message == 'logout' ) {
+    if ( request.message == 'showPage') chrome.pageAction.show(sender.tab.id); // enable popup
+    else if ( request.message == 'error' ) errorHandler(request); // Error occured
+    else if ( request.message == 'login' ) login(request.data); // Log user in
+    else if ( request.message == 'register' ) register(request.data); // Register user
+    else if ( request.message == 'logout' ) { // Log user out
         logout();
-        sendResponse({userActive: config.userActive});
-        chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
+        sendResponse({userActive: config.userActive}); // Send state back to login form
+        chrome.tabs.query({active: true, currentWindow: true}, function(tabs) { // Send state to content scripts
             if(tabs[0].id) chrome.tabs.sendMessage(tabs[0].id, {message: 'flush-dots'});
         });
     }
-    else if ( request.message == 'store' ) store(request.data, request.type, sender.tab.id);
-    else if ( request.message == 'checkActive' ) sendResponse({userActive: config.userActive, firstName: config.firstName});
-    else if ( request.message == 'storedElement' ) storeSavedElement(request.stored);
+    else if ( request.message == 'store' ) store(request.data, request.type, sender.tab.id); // Store on our server
+    else if ( request.message == 'checkActive' ) sendResponse({userActive: config.userActive, firstName: config.firstName}); // Check if current user is active
+    else if ( request.message == 'storedElement' ) storeSavedElement(request.stored); // Store an element locally
 });
 
-// Connect with content script, communicate settings between
+// Connect with content script, communicate settings between -- occurs upon opening G+
 chrome.runtime.onConnect.addListener(function(port) {
-    console.assert(port.name == "checkActiveContent");
+    console.assert(port.name == "checkActiveContent"); // Start active check communications
     port.onMessage.addListener(function(request) {
-        if (request.message == "checkLoginStatus") {
+        if (request.message == "checkLoginStatus") { // Check if user is logged in
             if(config.userActive) {
                 var loginData = {email: config.email, token: config.token};
+                // If logged in check if the token is valid
                 checkToken(JSON.stringify(loginData)).then(
                     function(response) {
                         if(response.token == 'valid') port.postMessage({message: 'loginStatus', userActive: config.userActive});
                         else {
-                            // Log user out
+                            // Log user out if token invalid
                             port.postMessage({message: 'loginStatus', userActive: false});
                             logout();
                         }
                     },
-                    function(reject) {logout();}
+                    function(reject) {logout();} // Log out on error
                 );
-            } else port.postMessage({message: 'loginStatus', userActive: config.userActive});
+            } else {
+                // If user isn't log in check if onboarding has happened
+                storage.get(keys.ONBOARDING, function(value){
+                    var doOnboard = false;
+                    if (!value) { // If value is false, onboarding hasn't happened, tell content script to do onboarding
+                        doOnboard = true;
+                        storage.set(keys.ONBOARDING, doOnboard);
+                    }
+                    port.postMessage({message: 'loginStatus', userActive: config.userActive, onboarding: doOnboard});
+                });
+            }
         }
-        else if (request.message == "checkXBarContext") contextMenuFindState(keys.XBAR, disableXbar, enableXbar, port);
-        else if (request.message == "checkHighlightContext") contextMenuFindState(keys.HIGHLIGHT, disableHighlight, enableHighlight, port);
+        else if (request.message == "checkXBarContext") contextMenuFindState(keys.XBAR, disableXbar, enableXbar, port); // Check enable status of GX
+        else if (request.message == "checkHighlightContext") contextMenuFindState(keys.HIGHLIGHT, disableHighlight, enableHighlight, port); // Check highlight status of GX
         else if (request.message == "checkStored") storage.get(keys.STORED+config.email,function(value){
-            port.postMessage({message: 'storedArray', storedArr: value});
+            port.postMessage({message: 'storedArray', storedArr: value}); // Get stored elements
         });
     });
 });

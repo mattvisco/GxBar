@@ -2,7 +2,7 @@
   "manifest_version": 2,
   "name": "GX for Google+",
   "description": "Use the GX Extension to store the content from Google+ you want to remember.",
-  "version": "1.0.3",
+  "version": "1.0.4",
 
   "content_scripts": [
     {
@@ -20,6 +20,7 @@
         "content/parsers.js",
         "content/savingElementUX.js",
         "content/dragDrop.js",
+        "content/onboarding.js",
         "content/setup.js"
       ],
       "css": [
@@ -41,8 +42,8 @@
   },
 
   "page_action": {
-    "default_popup": "popup/xBar.html",
-    "default_title": "GxBar"
+    "default_popup": "popup/login.html",
+    "default_title": "GX for Google+"
   },
 
   "web_accessible_resources": [

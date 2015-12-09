@@ -20,6 +20,7 @@ var storedElements = [];
 var SPACING = 75;
 var DRAGIMAGESIZE = 150;
 
+// Highlight the element this function is called on / turn off the last highlighted element
 var highlightDragElement = function() {
     var currClass = $(this).attr('class');
     var type = getType($(this),currClass);
@@ -37,21 +38,25 @@ var highlightDragElement = function() {
     }
 };
 
+// Turn off highlight of element called on
 var unHighlightDragElement = function() {
     $(this).css({outlineStyle: 'none'});
     currHighlighted = null;
 };
 
+// If there isn't a highlighted element - highlight element this fn is called on
 var checkHighlightDragElement = function() {
     if(!currHighlighted) highlightDragElement.call($(this));
 };
 
+// Check if we are on a specific type of weird event page, turns off dragging
 var checkEventPageDraggable = function(dragEl) {
     if ( window.location.pathname.indexOf("/events/") != -1 && window.location.pathname.indexOf("/Events/events/") == -1 ) {
         return !(POSTDOT.includes(dragEl) || dragEl == EMBEDDOT);
     } else return true;
 };
 
+// Select proper title for popup and show
 var showActiveHtml = function(show, extension) {
     if(extension) {
         if(show) showHideTitle('#active', '#de-active', '#high-active', '#high-de-active');
@@ -60,10 +65,14 @@ var showActiveHtml = function(show, extension) {
         if(show) showHideTitle('#high-active', '#active', '#de-active', '#high-de-active');
         else showHideTitle('#high-de-active', '#active', '#de-active', '#high-active');
     }
-    activatedPopUp.show();
-    setTimeout(function(){activatedPopUp.fadeOut()}, 1000);
+    // If onboarding disable popups
+    if(!onboarding) {
+        activatedPopUp.show();
+        setTimeout(function (){activatedPopUp.fadeOut()}, 1000);
+    }
 };
 
+// Show title and hide the rest
 var showHideTitle = function(showTitle, hide1, hide2, hide3) {
     activatedPopUp.find(showTitle).show();
     activatedPopUp.find(hide1).hide();
@@ -71,25 +80,7 @@ var showHideTitle = function(showTitle, hide1, hide2, hide3) {
     activatedPopUp.find(hide3).hide();
 };
 
-var pauseDrag = function(drag, updateElement) {
-    setDraggables(drag,false,drag, false, updateElement, true);
-};
-
-var enableDrag = function(drag, updateElement) {
-    setDraggables(drag, !drag, true, false, updateElement);
-    if (drag) {
-        // Turn on Drag Listeners
-        $(document)
-            .on('dragstart', onDragStart)
-            .on('dragend', onDragEnd);
-    } else {
-        // Turn off Drag Listeners
-        $(document)
-            .off('dragstart', onDragStart)
-            .off('dragend', onDragEnd);
-    }
-};
-
+// Iterates through elements in draggable and nondraggable array and sets them to be draggable
 var setDraggables = function(drag, nondrag, select, onlyHighlight, updateElement, pause) {
     var dragElement;
     for (var dragIndex in draggable) {
@@ -153,9 +144,39 @@ var setDraggables = function(drag, nondrag, select, onlyHighlight, updateElement
     }
 };
 
+// Pause dragging, update element only toggles specific element
+var pauseDrag = function(drag, updateElement) {
+    setDraggables(drag,false,drag, false, updateElement, true);
+};
+
+// Toggle dragging, update element only toggles specific element
+var enableDrag = function(drag, updateElement) {
+    setDraggables(drag, !drag, true, false, updateElement);
+    if (drag) {
+        // Turn on Drag Listeners
+        $(document)
+            .on('dragstart', onDragStart)
+            .on('dragend', onDragEnd);
+    } else {
+        // Turn off Drag Listeners
+        $(document)
+            .off('dragstart', onDragStart)
+            .off('dragend', onDragEnd);
+    }
+};
+
+// Toggle highlighting on/off
+var enableHighlight = function(state) {
+    highlightState = state;
+    setDraggables(true, false, true, true);
+    if(currHighlighted) currHighlighted.css({outlineStyle: 'none'});
+    showActiveHtml(highlightState, false);
+};
+
+// Toggles extension on/off
 var enableExtension = function(state) {
-    if (state && !beenSetup) setup();
-    else{
+    if (state && !beenSetup) setup(); // If enable & hasn't been set up, full setup call
+    else { // If has been setup and/or disable, turn off highlight, enableDrag with state, show correct popup
         if(currHighlighted) currHighlighted.css({outlineStyle: 'none'});
         currDragFunction = enableDrag;
         currDragState = state;
@@ -164,13 +185,8 @@ var enableExtension = function(state) {
     }
 };
 
-var enableHighlight = function(state) {
-    highlightState = state;
-    setDraggables(true, false, true, true);
-    if(currHighlighted) currHighlighted.css({outlineStyle: 'none'});
-    showActiveHtml(highlightState, false);
-};
-
+// Embeded elements have weird behavior upon lazy-loading
+// Without this function duplicate save bubbles appear
 var checkEmbeded = function(obj, objClass) {
     var type = getType($(obj),objClass);
     if (type != EMBEDTYPE) return true;
@@ -191,6 +207,7 @@ var checkEmbeded = function(obj, objClass) {
     }
 };
 
+// Checks if an element should be marked as saved and adds dot if it should
 var checkAndAddDot = function(obj) {
     if (!obj.dragOff) {
         var objClass = $(obj).attr('class');
@@ -225,6 +242,7 @@ var observer = new MutationObserver(function(mutations) {
 var observerConfig = {childList: true, subtree: true};
 var observerTarget = document.querySelector('body');
 
+// Adds html to G+ and sets draggability of elements
 var setup = function() {
     currUrlLocation = window.location.href;
 
@@ -261,15 +279,21 @@ var setup = function() {
     });
 };
 
+// Notify background to show login form and display icon in address bar
 chrome.runtime.sendMessage({message: 'showPage'});
 
+// Start conversation with background to check status and get user information
 var userActivePort = chrome.runtime.connect({name: "checkActiveContent"});
 userActivePort.postMessage({message: 'checkLoginStatus'});
 userActivePort.onMessage.addListener(function(response) {
     if (response.message == 'loginStatus') {
-        if(response.userActive) {
-            userActive = true;
-            userActivePort.postMessage({message: "checkXBarContext"});
+        if(response.onboarding) {
+            startOnboarding();
+        } else {
+            if (response.userActive) {
+                userActive = true;
+                userActivePort.postMessage({message: "checkXBarContext"});
+            }
         }
     } else if (response.message == keys.XBAR) {
         if(response.value) userActivePort.postMessage({message: "checkHighlightContext"});
@@ -282,13 +306,14 @@ userActivePort.onMessage.addListener(function(response) {
     }
 });
 
+// Listens for different messages from background
 chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
-    if (request.message == 'init') {
-        // set up onboarding again
-        //if (request.onboarding) {
-        //    startOnboarding();
-        //} else {
+    if (request.message == 'init') { // Listen for a signin event
+        if (request.onboarding) {
+            startOnboarding();
+        } else {
             if (request.userActive) {
+                if(onboarding) endOnboarding();
                 storedElements = request.storedArr;
                 highlightState = true;
                 if (!beenSetup) {
@@ -301,13 +326,13 @@ chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
                 storedElements = [];
                 enableExtension(false);
             }
-        //}
+        }
     }
-    else if (request.message == keys.XBAR) enableExtension(request.value);
-    else if (request.message == keys.HIGHLIGHT) enableHighlight(request.value);
-    else if (request.message == 'success') elementSaved(request.id, request.url);
-    else if (request.message == 'post-fail') elementSaveFailed(request.id);
-    else if (request.message == 'flush-dots') flushDots();
+    else if (request.message == keys.XBAR) enableExtension(request.value); // Listens for a extension toggle
+    else if (request.message == keys.HIGHLIGHT) enableHighlight(request.value); // Listens for a highlight toggle
+    else if (request.message == 'success') elementSaved(request.id, request.url); // Listens for a successful store
+    else if (request.message == 'post-fail') elementSaveFailed(request.id); // Listens for a failed store
+    else if (request.message == 'flush-dots') flushDots(); // Listens for a flushing of dots
 });
 
 // ************************************ //

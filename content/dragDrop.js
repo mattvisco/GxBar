@@ -11,12 +11,14 @@ var entered = false;
 // *********** Helpers ************ //
 // ******************************** //
 
+// Prevent all the defaults for events
 var preventDefault = function(e) {
     e.preventDefault();
     e.stopPropagation();
     return false;
 };
 
+// Find the proper display title associated with a type
 var findTitle = function(type) {
     switch(type) {
         case USERTYPE:
@@ -30,6 +32,7 @@ var findTitle = function(type) {
     }
 };
 
+// Set the position of the dropzone on screen
 var setDropPosition = function(dropZone, target, e) {
     var minTop = 0;
     var maxTop = $(window).height() - dropZone.outerHeight();
@@ -50,6 +53,7 @@ var setDropPosition = function(dropZone, target, e) {
     return {'left': left, 'top': top};
 };
 
+// Show the dropzone after setting layout, style, etc
 var showDropZone = function(target, e, type) {
     // Set position
     var position = setDropPosition(dropZone, target, e);
@@ -66,11 +70,13 @@ var showDropZone = function(target, e, type) {
 // ********* Drag Events ********** //
 // ******************************** //
 
+// On drag start, check if its a type, pick drag image, show dropzone
 var onDragStart = function(e) {
     var target = $(e.target);
     var targetClass = target.attr('class');
     var type = getType(target,targetClass);
     if (type && !currDragged) {
+        if(onboarding) showDropTitle();
         targetClass = targetClass.replace(' x_cursor', '');
         currDragged = new DragElement({target: target, targetClass: targetClass, type: type, id: getElementId(target,type,targetClass)});
         e.originalEvent.dataTransfer.setDragImage(typeToImage[type], 75, 75);
@@ -80,9 +86,9 @@ var onDragStart = function(e) {
         pauseDrag(currDragState);
         if(currHighlighted) unHighlightDragElement.call(currHighlighted);
     }
-
 };
 
+// Get the type from our own classes
 var getObjectType = function(obj) {
     if(obj instanceof Post) return POSTTYPE;
     else if(obj instanceof User) return USERTYPE;
@@ -92,6 +98,7 @@ var getObjectType = function(obj) {
     else if(obj instanceof EmbededElement) return EMBEDTYPE;
 };
 
+// Send parsed data to server
 var sendToServer = function(parsedObj) {
     // Testing Logs
     console.log("Parsed:");
@@ -107,6 +114,7 @@ var sendToServer = function(parsedObj) {
     }
 };
 
+// Reset page to defaults once dragging is done
 var resetDragDefaults = function() {
     currDragFunction = enableDrag;
     currDragState = true;
@@ -117,13 +125,14 @@ var resetDragDefaults = function() {
     currDragged = null;
 };
 
+// Start the parsing and send to server once complete
 var onDrop = function(e) {
     var dragElement = currDragged.target.get(0);
     var type = currDragged.type;
-    currDragged.parser().then(sendToServer); // Parse current element
+    if(onboarding) showHoverTitle();
+    else currDragged.parser().then(sendToServer); // Parse current element
 
     // Change to drop color and display 'saved' (upon callback of successful upload)
-    //target.css({ backgroundColor: typeToColor[type] });
     dragType.text("Saving");
     setTimeout(function() {
         storedElement(dragElement,type);
@@ -133,6 +142,7 @@ var onDrop = function(e) {
     return preventDefault(e);
 };
 
+// Change dropzone if user has entered it
 var onDragEnter = function(e) {
     entered = true;
     dragType.text("release to save");
@@ -141,6 +151,7 @@ var onDragEnter = function(e) {
     return preventDefault(e);
 };
 
+// Change dropzone if user has left it
 var onDragLeave = function(e) {
     entered = false;
     // Unhighlight box
@@ -150,8 +161,10 @@ var onDragLeave = function(e) {
     return preventDefault(e);
 };
 
+// If drop doesn't occur reset to original state
 var onDragEnd = function(e) {
     if ( !entered && currDragged ) {
+        if(onboarding) showDragTitle();
         dropZone.hide();
         currDragged = null;
         currDragFunction = enableDrag;
