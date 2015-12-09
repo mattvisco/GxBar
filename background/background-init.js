@@ -4,7 +4,7 @@
 // background-init.js
 
 // For testing -- if need to clear local storage uncomment
-window.chrome.storage.local.clear();
+//window.chrome.storage.local.clear();
 
 // ******************************** //
 // *******  Context Menus   ******* //
